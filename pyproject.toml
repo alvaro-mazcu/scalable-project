@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=69.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "scalable-project"
+version = "0.1.0"
+description = "Utilities for building a Sweden flights dataset enriched with weather data."
+readme = "README.md"
+requires-python = ">=3.12"
+authors = [{name = "Alvaro Mazcunan"}]
+dependencies = [
+    "pandas>=2.2",
+    "requests>=2.31",
+    "python-dotenv>=1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]

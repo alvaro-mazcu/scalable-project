@@ -2,10 +2,11 @@
 __pycache__/
 *.py[codz]
 *$py.class
-
+cache/
 # C extensions
 *.so
-
+airports.csv
+sweden_flights.csv
 # Distribution / packaging
 .Python
 build/
