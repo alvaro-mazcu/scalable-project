@@ -72,18 +72,13 @@ WEATHER_HOURLY_VARS = os.getenv(
     "wind_speed_10m,wind_direction_10m,wind_gusts_10m,weather_code",
 )
 
-# Start with top 10 Swedish airports (ICAO)
-DEFAULT_SWEDEN_TOP_10_ICAO = [
-    # "ESSA",  # Stockholm Arlanda
-    # "ESSB",  # Stockholm Bromma
-    "ESGG",  # Göteborg Landvetter
-    "ESMS",  # Malmö
-    # "ESPA",  # Luleå
+# Start with top 5 Swedish airports (ICAO)
+DEFAULT_SWEDEN_TOP_5_ICAO = [
+    "ESSA",  # Stockholm Arlanda
+    "ESSB",  # Stockholm Bromma
+    # "ESGG",  # Göteborg Landvetter
+    # "ESMS",  # Malmö
     # "ESNU",  # Umeå
-    # "ESNZ",  # Åre Östersund
-    # "ESSV",  # Visby
-    "ESDF",  # Ronneby
-    # "ESNQ",  # Kiruna
 ]
 
 # -----------------------------
@@ -98,10 +93,11 @@ except Exception:
     pass
 
 
-def load_airports_sweden() -> pd.DataFrame:
-    """Download airports.csv and filter to Sweden. Returns dataframe with ICAO, IATA, name, lat, lon, type, scheduled_service."""
+def load_airports_metadata() -> pd.DataFrame:
+    """Load global airports metadata and normalize ICAO codes."""
 
-    local_csv = "/Users/alvaromazcunan/Documents/KTH/scalable-project/airports.csv"
+    root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+    local_csv = os.path.join(root_dir, "airports.csv")
     if os.path.exists(local_csv):
         df = pd.read_csv(local_csv)
     else:
@@ -114,17 +110,13 @@ def load_airports_sweden() -> pd.DataFrame:
             max_retries=MAX_RETRIES,
             retry_backoff_base=RETRY_BACKOFF_BASE_SEC,
         )
-        # pandas can read from bytes
         from io import StringIO
 
         df = pd.read_csv(StringIO(resp.text))
-    # Columns of interest: ident, iso_country, type, name, latitude_deg, longitude_deg, iata_code, scheduled_service
-    df_se = df[df["iso_country"] == "SE"].copy()
-    # Normalize ICAO:
-    # OurAirports uses 'ident' for ICAO-like identifiers; for airports it usually equals ICAO.
-    df_se.rename(columns={"ident": "icao"}, inplace=True)
+
     keep_cols = [
-        "icao",
+        "ident",
+        "iso_country",
         "iata_code",
         "name",
         "municipality",
@@ -134,9 +126,18 @@ def load_airports_sweden() -> pd.DataFrame:
         "longitude_deg",
         "elevation_ft",
     ]
-    df_se = df_se[keep_cols]
-    df_se = df_se[df_se["icao"].notna()]
-    df_se["icao"] = df_se["icao"].astype(str).str.upper()
+    df = df[keep_cols]
+    df.rename(columns={"ident": "icao"}, inplace=True)
+    df = df[df["icao"].notna()].copy()
+    df["icao"] = df["icao"].astype(str).str.upper()
+    return df
+
+
+def load_airports_sweden(airports_df: Optional[pd.DataFrame] = None) -> pd.DataFrame:
+    """Filter airports to Sweden only."""
+
+    source = airports_df if airports_df is not None else load_airports_metadata()
+    df_se = source[source["iso_country"] == "SE"].copy()
     return df_se
 
 
@@ -201,6 +202,7 @@ def compute_expected_durations(df: pd.DataFrame, window: int) -> pd.DataFrame:
 # -----------------------------
 def build_dataset(
     airports_df: pd.DataFrame,
+    airports_meta_df: pd.DataFrame,
     days: int,
     out_csv: str,
     include_arrivals_backfill: bool = True,
@@ -284,9 +286,11 @@ def build_dataset(
     df = pd.DataFrame(all_flights).drop_duplicates()
 
     # Clean & validate
-    # Keep flights that *depart* from one of our origin airports (so origin airport is known Swedish)
-    origin_set = set(airports_df["icao"].astype(str).str.upper().tolist())
-    df = df[df["origin_airport_icao"].isin(origin_set)].copy()
+    selected_set = set(airports_df["icao"].astype(str).str.upper().tolist())
+    df = df[
+        df["origin_airport_icao"].isin(selected_set)
+        | df["destination_airport_icao"].isin(selected_set)
+    ].copy()
 
     # Basic required fields
     df = df[df["destination_airport_icao"].notna()].copy()
@@ -309,7 +313,7 @@ def build_dataset(
     df = compute_expected_durations(df, window=ROLLING_MEDIAN_WINDOW)
 
     # Enrich with airport metadata (origin + destination lat/lon)
-    ap_meta = airports_df[["icao", "name", "latitude_deg", "longitude_deg"]].copy()
+    ap_meta = airports_meta_df[["icao", "name", "latitude_deg", "longitude_deg"]].copy()
     ap_meta.columns = ["icao", "airport_name", "lat", "lon"]
 
     df = df.merge(
@@ -433,12 +437,12 @@ def build_dataset(
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Build Sweden flights + weather dataset (CSV).")
-    parser.add_argument("--days", type=int, default=1, help="Number of past UTC days to ingest (ending yesterday).")
+    parser.add_argument("--days", type=int, default=2, help="Number of past UTC days to ingest (ending yesterday).")
     parser.add_argument("--out", type=str, default="sweden_flights.csv", help="Output CSV path.")
     parser.add_argument(
         "--airports",
         type=str,
-        default=",".join(DEFAULT_SWEDEN_TOP_10_ICAO),
+        default=",".join(DEFAULT_SWEDEN_TOP_5_ICAO),
         help="Comma-separated ICAO codes to include (default: top 10).",
     )
     parser.add_argument(
@@ -463,7 +467,8 @@ def main() -> None:
     else:
         print("[WARN] No OpenSky credentials found in env. You may hit anonymous limits or fail if auth is required.")
 
-    airports_df_se = load_airports_sweden()
+    airports_meta_df = load_airports_metadata()
+    airports_df_se = load_airports_sweden(airports_meta_df)
     airport_list = [a.strip().upper() for a in args.airports.split(",")] if args.airports else None
     airports_df = pick_airports(airports_df_se, airport_list, include_all_sweden=bool(args.all_sweden))
 
@@ -474,6 +479,7 @@ def main() -> None:
 
     build_dataset(
         airports_df=airports_df,
+        airports_meta_df=airports_meta_df,
         days=int(args.days),
         out_csv=args.out,
         include_arrivals_backfill=not bool(args.no_arrivals_backfill),
