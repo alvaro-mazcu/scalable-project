@@ -4,6 +4,7 @@ import datetime as dt
 import os
 from typing import Any, Optional
 
+from dotenv import load_dotenv
 import pandas as pd
 import requests
 
@@ -12,16 +13,7 @@ from src.clients.opensky import OpenSkyClient
 from src.utils.helpers import ensure_dir, retry_request, utc_day_bounds
 from src.utils.weather import hourly_payload_to_df, weather_snapshots
 
-# -----------------------------
-# Optional .env loading (must happen before reading env vars below)
-# -----------------------------
-try:
-    from dotenv import load_dotenv  # type: ignore
-
-    load_dotenv()
-except Exception:
-    # It's fine if python-dotenv isn't installed; env vars can still be set externally.
-    pass
+load_dotenv()
 
 # -----------------------------
 # CONFIG (credentials/settings)
@@ -76,9 +68,34 @@ WEATHER_HOURLY_VARS = os.getenv(
 DEFAULT_SWEDEN_TOP_5_ICAO = [
     "ESSA",  # Stockholm Arlanda
     "ESSB",  # Stockholm Bromma
-    # "ESGG",  # Göteborg Landvetter
-    # "ESMS",  # Malmö
-    # "ESNU",  # Umeå
+    "ESGG",  # Göteborg Landvetter
+    "ESMS",  # Malmö
+    "ESNU",  # Umeå
+    "EGLL",  # London Heathrow
+    "LFPG",  # Paris Charles de Gaulle
+    "EHAM",  # Amsterdam Schiphol
+    "EDDF",  # Frankfurt
+    "LTFM",  # Istanbul
+    "LEMD",  # Madrid Barajas
+    "LEBL",  # Barcelona El Prat
+    "EDDM",  # Munich
+    "LIRF",  # Rome Fiumicino
+    "LSZH",  # Zürich
+    "LOWW",  # Vienna
+    "EKCH",  # Copenhagen
+    "ENGM",  # Oslo Gardermoen
+    "EFHK",  # Helsinki Vantaa
+    "EIDW",  # Dublin
+    "EBBR",  # Brussels
+    "LPPT",  # Lisbon
+    "EGKK",  # London Gatwick
+    "EGCC",  # Manchester
+    "LFMN",  # Nice
+    "LEMG",  # Málaga
+    "LKPR",  # Prague
+    "EDDH",  # Hamburg
+    "EDDK",  # Cologne Bonn
+    "ELLX",  # Luxembourg
 ]
 
 # -----------------------------
@@ -134,25 +151,24 @@ def load_airports_metadata() -> pd.DataFrame:
 
 
 def load_airports_sweden(airports_df: Optional[pd.DataFrame] = None) -> pd.DataFrame:
-    """Filter airports to Sweden only."""
+    """Return the complete airports catalog (no country-specific filtering)."""
 
     source = airports_df if airports_df is not None else load_airports_metadata()
-    df_se = source[source["iso_country"] == "SE"].copy()
-    return df_se
+    return source.copy()
 
 
-def pick_airports(df_se: pd.DataFrame, airport_icaos: Optional[list[str]], include_all_sweden: bool) -> pd.DataFrame:
-    if include_all_sweden:
-        df = df_se.copy()
+def pick_airports(airports_catalog: pd.DataFrame, airport_icaos: Optional[list[str]], include_all: bool) -> pd.DataFrame:
+    if include_all:
+        df = airports_catalog.copy()
         # Prefer those with scheduled service and large/medium
         df = df[df["scheduled_service"] == "yes"]
         df = df[df["type"].isin(["large_airport", "medium_airport"])]
         return df.reset_index(drop=True)
 
-    df = df_se[df_se["icao"].isin(airport_icaos)].copy()
-    missing = sorted(set(airport_icaos) - set(df["icao"].tolist()))
+    df = airports_catalog[airports_catalog["icao"].isin(airport_icaos)].copy()
+    missing = sorted(set(airport_icaos or []) - set(df["icao"].tolist()))
     if missing:
-        print(f"[WARN] These ICAOs were not found in OurAirports Sweden list (check spelling): {missing}")
+        print(f"[WARN] These ICAOs were not found in the airport catalog (check spelling): {missing}")
     return df.reset_index(drop=True)
 
 
@@ -245,7 +261,11 @@ def build_dataset(
             begin_ts, end_ts = utc_day_bounds(d)
 
             print(f"[INFO] OpenSky departures: {origin_icao} {d.isoformat()}")
-            deps = opensky.get_departures(origin_icao, begin_ts, end_ts)
+            try:
+                deps = opensky.get_departures(origin_icao, begin_ts, end_ts)
+            except Exception as exc:
+                print(f"[WARN] Failed to fetch departures for {origin_icao} on {d.isoformat()}: {exc}")
+                continue
 
             for f in deps:
                 # normalize minimal schema
@@ -265,7 +285,11 @@ def build_dataset(
             # Optional: backfill arrivals (useful if you want destination-based data too)
             if include_arrivals_backfill:
                 print(f"[INFO] OpenSky arrivals (optional backfill): {origin_icao} {d.isoformat()}")
-                arrs = opensky.get_arrivals(origin_icao, begin_ts, end_ts)
+                try:
+                    arrs = opensky.get_arrivals(origin_icao, begin_ts, end_ts)
+                except Exception as exc:
+                    print(f"[WARN] Failed to fetch arrivals for {origin_icao} on {d.isoformat()}: {exc}")
+                    arrs = []
                 for f in arrs:
                     all_flights.append(
                         {
@@ -311,6 +335,7 @@ def build_dataset(
 
     # Compute expected flight time baseline
     df = compute_expected_durations(df, window=ROLLING_MEDIAN_WINDOW)
+    df["flight_time_diff_sec"] = df["real_flight_time_sec"] - df["expected_flight_time_sec"]
 
     # Enrich with airport metadata (origin + destination lat/lon)
     ap_meta = airports_meta_df[["icao", "name", "latitude_deg", "longitude_deg"]].copy()
@@ -418,6 +443,7 @@ def build_dataset(
         "actual_takeoff_time_utc",
         "expected_flight_time_sec",
         "real_flight_time_sec",
+        "flight_time_diff_sec",
         "landing_time_utc",
         "day_utc",
         "origin_airport_name",
@@ -437,7 +463,7 @@ def build_dataset(
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Build Sweden flights + weather dataset (CSV).")
-    parser.add_argument("--days", type=int, default=2, help="Number of past UTC days to ingest (ending yesterday).")
+    parser.add_argument("--days", type=int, default=1, help="Number of past UTC days to ingest (ending yesterday).")
     parser.add_argument("--out", type=str, default="sweden_flights.csv", help="Output CSV path.")
     parser.add_argument(
         "--airports",
@@ -448,7 +474,7 @@ def main() -> None:
     parser.add_argument(
         "--all-sweden",
         action="store_true",
-        help="Use all Sweden airports with scheduled_service=yes and type large/medium from OurAirports.",
+        help="Use all airports with scheduled_service=yes and type large/medium from OurAirports.",
     )
     parser.add_argument(
         "--no-arrivals-backfill",
@@ -468,9 +494,9 @@ def main() -> None:
         print("[WARN] No OpenSky credentials found in env. You may hit anonymous limits or fail if auth is required.")
 
     airports_meta_df = load_airports_metadata()
-    airports_df_se = load_airports_sweden(airports_meta_df)
+    airports_df_catalog = load_airports_sweden(airports_meta_df)
     airport_list = [a.strip().upper() for a in args.airports.split(",")] if args.airports else None
-    airports_df = pick_airports(airports_df_se, airport_list, include_all_sweden=bool(args.all_sweden))
+    airports_df = pick_airports(airports_df_catalog, airport_list, include_all=bool(args.all_sweden))
 
     if airports_df.empty:
         raise RuntimeError("Airport selection is empty. Check --airports values or --all-sweden filters.")
