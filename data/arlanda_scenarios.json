@@ -1,0 +1,1502 @@
+[
+  {
+    "flight_id": "UA_UKKK_000",
+    "origin": {
+      "icao": "UKKK",
+      "lat": 50.40194,
+      "lon": 30.45194
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-01T06:00:00+00:00",
+    "landing_iso": "2025-02-01T13:45:17.428270+00:00"
+  },
+  {
+    "flight_id": "GB_EGNX_001",
+    "origin": {
+      "icao": "EGNX",
+      "lat": 52.8311,
+      "lon": -1.32806
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-01T07:00:00+00:00",
+    "landing_iso": "2025-02-01T09:13:30.348469+00:00"
+  },
+  {
+    "flight_id": "CD_FZCA_002",
+    "origin": {
+      "icao": "FZCA",
+      "lat": -5.03577,
+      "lon": 18.785601
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-01T08:00:00+00:00",
+    "landing_iso": "2025-02-01T12:28:30.949915+00:00"
+  },
+  {
+    "flight_id": "US_KVLD_003",
+    "origin": {
+      "icao": "KVLD",
+      "lat": 30.782499313354492,
+      "lon": -83.27670288085938
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-01T09:00:00+00:00",
+    "landing_iso": "2025-02-01T13:00:32.027916+00:00"
+  },
+  {
+    "flight_id": "DO_MDLR_004",
+    "origin": {
+      "icao": "MDLR",
+      "lat": 18.452222,
+      "lon": -68.911111
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-01T10:00:00+00:00",
+    "landing_iso": "2025-02-01T18:37:41.667339+00:00"
+  },
+  {
+    "flight_id": "KR_RKSS_005",
+    "origin": {
+      "icao": "RKSS",
+      "lat": 37.5583,
+      "lon": 126.791
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-01T11:00:00+00:00",
+    "landing_iso": "2025-02-01T19:05:25.063393+00:00"
+  },
+  {
+    "flight_id": "CN_ZJHK_006",
+    "origin": {
+      "icao": "ZJHK",
+      "lat": 19.9349,
+      "lon": 110.459
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-01T12:00:00+00:00",
+    "landing_iso": "2025-02-01T22:01:46.617994+00:00"
+  },
+  {
+    "flight_id": "BR_SBAQ_007",
+    "origin": {
+      "icao": "SBAQ",
+      "lat": -21.812,
+      "lon": -48.132999
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-01T13:00:00+00:00",
+    "landing_iso": "2025-02-01T15:46:56.818177+00:00"
+  },
+  {
+    "flight_id": "CA_CYLW_008",
+    "origin": {
+      "icao": "CYLW",
+      "lat": 49.9561,
+      "lon": -119.377998
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-01T14:00:00+00:00",
+    "landing_iso": "2025-02-01T19:47:50.266958+00:00"
+  },
+  {
+    "flight_id": "CA_CZMT_009",
+    "origin": {
+      "icao": "CZMT",
+      "lat": 54.0275,
+      "lon": -132.125
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-01T15:00:00+00:00",
+    "landing_iso": "2025-02-01T17:16:05.429910+00:00"
+  },
+  {
+    "flight_id": "AR_SARP_010",
+    "origin": {
+      "icao": "SARP",
+      "lat": -27.3858,
+      "lon": -55.9707
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-01T16:00:00+00:00",
+    "landing_iso": "2025-02-01T19:58:03.870384+00:00"
+  },
+  {
+    "flight_id": "MG_FMMI_011",
+    "origin": {
+      "icao": "FMMI",
+      "lat": -18.7969,
+      "lon": 47.478802
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-01T17:00:00+00:00",
+    "landing_iso": "2025-02-01T23:32:53.511335+00:00"
+  },
+  {
+    "flight_id": "US_KCDR_012",
+    "origin": {
+      "icao": "KCDR",
+      "lat": 42.837601,
+      "lon": -103.095001
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-01T18:00:00+00:00",
+    "landing_iso": "2025-02-01T20:14:19.765418+00:00"
+  },
+  {
+    "flight_id": "JP_RJNK_013",
+    "origin": {
+      "icao": "RJNK",
+      "lat": 36.3946,
+      "lon": 136.406998
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-01T19:00:00+00:00",
+    "landing_iso": "2025-02-01T22:47:22.339882+00:00"
+  },
+  {
+    "flight_id": "GR_LGHI_014",
+    "origin": {
+      "icao": "LGHI",
+      "lat": 38.34320068359375,
+      "lon": 26.140600204467773
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-01T20:00:00+00:00",
+    "landing_iso": "2025-02-02T03:50:56.255784+00:00"
+  },
+  {
+    "flight_id": "PG_AYMD_015",
+    "origin": {
+      "icao": "AYMD",
+      "lat": -5.20707988739,
+      "lon": 145.789001465
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-01T21:00:00+00:00",
+    "landing_iso": "2025-02-02T03:54:16.103972+00:00"
+  },
+  {
+    "flight_id": "PF_NTTH_016",
+    "origin": {
+      "icao": "NTTH",
+      "lat": -16.687084,
+      "lon": -151.021593
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-01T22:00:00+00:00",
+    "landing_iso": "2025-02-02T01:59:02.276154+00:00"
+  },
+  {
+    "flight_id": "CV_GVMA_017",
+    "origin": {
+      "icao": "GVMA",
+      "lat": 15.15590000152588,
+      "lon": -23.213699340820312
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-01T23:00:00+00:00",
+    "landing_iso": "2025-02-02T06:18:12.208158+00:00"
+  },
+  {
+    "flight_id": "PF_NTAT_018",
+    "origin": {
+      "icao": "NTAT",
+      "lat": -23.365400314331055,
+      "lon": -149.5240020751953
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-02T00:00:00+00:00",
+    "landing_iso": "2025-02-02T09:17:05.546796+00:00"
+  },
+  {
+    "flight_id": "CA_CYXU_019",
+    "origin": {
+      "icao": "CYXU",
+      "lat": 43.035599,
+      "lon": -81.1539
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-02T01:00:00+00:00",
+    "landing_iso": "2025-02-02T03:03:30.559814+00:00"
+  },
+  {
+    "flight_id": "LV_EVRA_020",
+    "origin": {
+      "icao": "EVRA",
+      "lat": 56.920752,
+      "lon": 23.970711
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-02T02:00:00+00:00",
+    "landing_iso": "2025-02-02T11:15:08.543759+00:00"
+  },
+  {
+    "flight_id": "CN_ZPLJ_021",
+    "origin": {
+      "icao": "ZPLJ",
+      "lat": 26.68,
+      "lon": 100.246002
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-02T03:00:00+00:00",
+    "landing_iso": "2025-02-02T11:16:59.716398+00:00"
+  },
+  {
+    "flight_id": "US_KSLN_022",
+    "origin": {
+      "icao": "KSLN",
+      "lat": 38.79100036621094,
+      "lon": -97.6521987915039
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-02T04:00:00+00:00",
+    "landing_iso": "2025-02-02T09:03:44.116735+00:00"
+  },
+  {
+    "flight_id": "FR_LFMU_023",
+    "origin": {
+      "icao": "LFMU",
+      "lat": 43.323502,
+      "lon": 3.3539
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-02T05:00:00+00:00",
+    "landing_iso": "2025-02-02T08:23:57.535794+00:00"
+  },
+  {
+    "flight_id": "US_KPGD_024",
+    "origin": {
+      "icao": "KPGD",
+      "lat": 26.9202,
+      "lon": -81.990501
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-02T06:00:00+00:00",
+    "landing_iso": "2025-02-02T16:36:53.703539+00:00"
+  },
+  {
+    "flight_id": "CN_ZPLC_025",
+    "origin": {
+      "icao": "ZPLC",
+      "lat": 23.7381,
+      "lon": 100.025002
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-02T07:00:00+00:00",
+    "landing_iso": "2025-02-02T12:01:45.663262+00:00"
+  },
+  {
+    "flight_id": "BR_SBPF_026",
+    "origin": {
+      "icao": "SBPF",
+      "lat": -28.243976,
+      "lon": -52.32777
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-02T08:00:00+00:00",
+    "landing_iso": "2025-02-02T10:50:04.965326+00:00"
+  },
+  {
+    "flight_id": "CD_FZIC_027",
+    "origin": {
+      "icao": "FZIC",
+      "lat": 0.481638997793,
+      "lon": 25.3379993439
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-02T09:00:00+00:00",
+    "landing_iso": "2025-02-02T11:52:13.610609+00:00"
+  },
+  {
+    "flight_id": "CN_ZSCN_028",
+    "origin": {
+      "icao": "ZSCN",
+      "lat": 28.864815,
+      "lon": 115.90271
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-02T10:00:00+00:00",
+    "landing_iso": "2025-02-02T19:37:38.817470+00:00"
+  },
+  {
+    "flight_id": "HT_MTCA_029",
+    "origin": {
+      "icao": "MTCA",
+      "lat": 18.271099,
+      "lon": -73.7883
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-02T11:00:00+00:00",
+    "landing_iso": "2025-02-02T18:26:00.723416+00:00"
+  },
+  {
+    "flight_id": "SE_ESKS_030",
+    "origin": {
+      "icao": "ESKS",
+      "lat": 61.158393,
+      "lon": 12.842503
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-02T12:00:00+00:00",
+    "landing_iso": "2025-02-02T21:15:50.956054+00:00"
+  },
+  {
+    "flight_id": "UZ_UTSS_031",
+    "origin": {
+      "icao": "UTSS",
+      "lat": 39.7005,
+      "lon": 66.983803
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-02T13:00:00+00:00",
+    "landing_iso": "2025-02-02T21:34:03.309889+00:00"
+  },
+  {
+    "flight_id": "AU_YWLG_032",
+    "origin": {
+      "icao": "YWLG",
+      "lat": -30.032801,
+      "lon": 148.126007
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-02T14:00:00+00:00",
+    "landing_iso": "2025-02-02T20:49:33.790163+00:00"
+  },
+  {
+    "flight_id": "TR_LTCV_033",
+    "origin": {
+      "icao": "LTCV",
+      "lat": 37.3647,
+      "lon": 42.0582
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-02T15:00:00+00:00",
+    "landing_iso": "2025-02-03T01:45:28.950753+00:00"
+  },
+  {
+    "flight_id": "IT_LIMF_034",
+    "origin": {
+      "icao": "LIMF",
+      "lat": 45.200802,
+      "lon": 7.64963
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-02T16:00:00+00:00",
+    "landing_iso": "2025-02-02T21:24:24.513822+00:00"
+  },
+  {
+    "flight_id": "MZ_FQQL_035",
+    "origin": {
+      "icao": "FQQL",
+      "lat": -17.855499267578125,
+      "lon": 36.86909866333008
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-02T17:00:00+00:00",
+    "landing_iso": "2025-02-02T23:58:06.116453+00:00"
+  },
+  {
+    "flight_id": "IR_OIBL_036",
+    "origin": {
+      "icao": "OIBL",
+      "lat": 26.532283,
+      "lon": 54.82484
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-02T18:00:00+00:00",
+    "landing_iso": "2025-02-03T03:27:52.711122+00:00"
+  },
+  {
+    "flight_id": "IT_LIBD_037",
+    "origin": {
+      "icao": "LIBD",
+      "lat": 41.138901,
+      "lon": 16.760599
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-02T19:00:00+00:00",
+    "landing_iso": "2025-02-03T02:34:00.039977+00:00"
+  },
+  {
+    "flight_id": "CN_ZLTS_038",
+    "origin": {
+      "icao": "ZLTS",
+      "lat": 34.5601,
+      "lon": 105.860343
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-02T20:00:00+00:00",
+    "landing_iso": "2025-02-03T05:45:19.303570+00:00"
+  },
+  {
+    "flight_id": "IT_LIRZ_039",
+    "origin": {
+      "icao": "LIRZ",
+      "lat": 43.095901,
+      "lon": 12.5132
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-02T21:00:00+00:00",
+    "landing_iso": "2025-02-03T04:11:46.209506+00:00"
+  },
+  {
+    "flight_id": "US_KOLM_040",
+    "origin": {
+      "icao": "KOLM",
+      "lat": 46.969399,
+      "lon": -122.903
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-02T22:00:00+00:00",
+    "landing_iso": "2025-02-03T06:20:28.127493+00:00"
+  },
+  {
+    "flight_id": "US_KGPI_041",
+    "origin": {
+      "icao": "KGPI",
+      "lat": 48.31050109863281,
+      "lon": -114.25599670410156
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-02T23:00:00+00:00",
+    "landing_iso": "2025-02-03T01:24:44.710030+00:00"
+  },
+  {
+    "flight_id": "FI_EFKI_042",
+    "origin": {
+      "icao": "EFKI",
+      "lat": 64.2855,
+      "lon": 27.6924
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-03T00:00:00+00:00",
+    "landing_iso": "2025-02-03T04:03:03.904131+00:00"
+  },
+  {
+    "flight_id": "PL_EPPO_043",
+    "origin": {
+      "icao": "EPPO",
+      "lat": 52.421598,
+      "lon": 16.823359
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-03T01:00:00+00:00",
+    "landing_iso": "2025-02-03T05:36:16.170021+00:00"
+  },
+  {
+    "flight_id": "AU_YSCB_044",
+    "origin": {
+      "icao": "YSCB",
+      "lat": -35.3069,
+      "lon": 149.195007
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-03T02:00:00+00:00",
+    "landing_iso": "2025-02-03T04:43:05.260052+00:00"
+  },
+  {
+    "flight_id": "MY_WBKW_045",
+    "origin": {
+      "icao": "WBKW",
+      "lat": 4.31338,
+      "lon": 118.12152
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-03T03:00:00+00:00",
+    "landing_iso": "2025-02-03T07:05:42.424718+00:00"
+  },
+  {
+    "flight_id": "SE_ESNK_046",
+    "origin": {
+      "icao": "ESNK",
+      "lat": 63.048599,
+      "lon": 17.7689
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-03T04:00:00+00:00",
+    "landing_iso": "2025-02-03T06:54:32.446313+00:00"
+  },
+  {
+    "flight_id": "KY_MWCR_047",
+    "origin": {
+      "icao": "MWCR",
+      "lat": 19.292801,
+      "lon": -81.357697
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-03T05:00:00+00:00",
+    "landing_iso": "2025-02-03T09:30:06.344741+00:00"
+  },
+  {
+    "flight_id": "CN_ZGHA_048",
+    "origin": {
+      "icao": "ZGHA",
+      "lat": 28.189199,
+      "lon": 113.220001
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-03T06:00:00+00:00",
+    "landing_iso": "2025-02-03T13:43:16.175994+00:00"
+  },
+  {
+    "flight_id": "TH_VTUJ_049",
+    "origin": {
+      "icao": "VTUJ",
+      "lat": 14.868300437927,
+      "lon": 103.49800109863
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-03T07:00:00+00:00",
+    "landing_iso": "2025-02-03T12:17:00.562599+00:00"
+  },
+  {
+    "flight_id": "ID_WAWD_050",
+    "origin": {
+      "icao": "WAWD",
+      "lat": -5.293996,
+      "lon": 123.634
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-03T08:00:00+00:00",
+    "landing_iso": "2025-02-03T13:19:53.863335+00:00"
+  },
+  {
+    "flight_id": "CN_ZHXF_051",
+    "origin": {
+      "icao": "ZHXF",
+      "lat": 32.152222,
+      "lon": 112.291666
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-03T09:00:00+00:00",
+    "landing_iso": "2025-02-03T12:53:08.027797+00:00"
+  },
+  {
+    "flight_id": "TR_LTBY_052",
+    "origin": {
+      "icao": "LTBY",
+      "lat": 39.809898,
+      "lon": 30.5194
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-03T10:00:00+00:00",
+    "landing_iso": "2025-02-03T14:24:10.081434+00:00"
+  },
+  {
+    "flight_id": "IR_OIAH_053",
+    "origin": {
+      "icao": "OIAH",
+      "lat": 30.333869,
+      "lon": 50.833796
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-03T11:00:00+00:00",
+    "landing_iso": "2025-02-03T21:25:47.608642+00:00"
+  },
+  {
+    "flight_id": "NG_DNBC_054",
+    "origin": {
+      "icao": "DNBC",
+      "lat": 10.482833,
+      "lon": 9.744
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-03T12:00:00+00:00",
+    "landing_iso": "2025-02-03T19:49:56.346482+00:00"
+  },
+  {
+    "flight_id": "CO_SKMU_055",
+    "origin": {
+      "icao": "SKMU",
+      "lat": 1.25366,
+      "lon": -70.2339
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-03T13:00:00+00:00",
+    "landing_iso": "2025-02-03T20:28:55.844584+00:00"
+  },
+  {
+    "flight_id": "ES_LECO_056",
+    "origin": {
+      "icao": "LECO",
+      "lat": 43.302101,
+      "lon": -8.37726
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-03T14:00:00+00:00",
+    "landing_iso": "2025-02-03T17:32:24.892202+00:00"
+  },
+  {
+    "flight_id": "US_KMOT_057",
+    "origin": {
+      "icao": "KMOT",
+      "lat": 48.2593994140625,
+      "lon": -101.27999877929688
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-03T15:00:00+00:00",
+    "landing_iso": "2025-02-03T23:33:43.708254+00:00"
+  },
+  {
+    "flight_id": "AU_YMGD_058",
+    "origin": {
+      "icao": "YMGD",
+      "lat": -12.0560998917,
+      "lon": 134.23399353
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-03T16:00:00+00:00",
+    "landing_iso": "2025-02-03T19:28:14.240798+00:00"
+  },
+  {
+    "flight_id": "US_KSWF_059",
+    "origin": {
+      "icao": "KSWF",
+      "lat": 41.504101,
+      "lon": -74.104797
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-03T17:00:00+00:00",
+    "landing_iso": "2025-02-03T22:24:54.356313+00:00"
+  },
+  {
+    "flight_id": "AU_YBOU_060",
+    "origin": {
+      "icao": "YBOU",
+      "lat": -22.913299560546875,
+      "lon": 139.89999389648438
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-03T18:00:00+00:00",
+    "landing_iso": "2025-02-04T04:54:20.556561+00:00"
+  },
+  {
+    "flight_id": "TR_LTCT_061",
+    "origin": {
+      "icao": "LTCT",
+      "lat": 39.976627,
+      "lon": 43.876648
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-03T19:00:00+00:00",
+    "landing_iso": "2025-02-04T02:45:35.992219+00:00"
+  },
+  {
+    "flight_id": "US_KORF_062",
+    "origin": {
+      "icao": "KORF",
+      "lat": 36.895341,
+      "lon": -76.201
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-03T20:00:00+00:00",
+    "landing_iso": "2025-02-04T03:00:45.171698+00:00"
+  },
+  {
+    "flight_id": "NG_DNMA_063",
+    "origin": {
+      "icao": "DNMA",
+      "lat": 11.855299949645996,
+      "lon": 13.080900192260742
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-03T21:00:00+00:00",
+    "landing_iso": "2025-02-04T05:09:41.501732+00:00"
+  },
+  {
+    "flight_id": "RU_UERS_064",
+    "origin": {
+      "icao": "UERS",
+      "lat": 71.927902,
+      "lon": 114.080002
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-03T22:00:00+00:00",
+    "landing_iso": "2025-02-04T07:35:08.402214+00:00"
+  },
+  {
+    "flight_id": "AR_SACO_065",
+    "origin": {
+      "icao": "SACO",
+      "lat": -31.323601,
+      "lon": -64.208
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-03T23:00:00+00:00",
+    "landing_iso": "2025-02-04T07:59:02.397134+00:00"
+  },
+  {
+    "flight_id": "MQ_TFFF_066",
+    "origin": {
+      "icao": "TFFF",
+      "lat": 14.591,
+      "lon": -61.003201
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-04T00:00:00+00:00",
+    "landing_iso": "2025-02-04T04:03:41.157532+00:00"
+  },
+  {
+    "flight_id": "IN_VICX_067",
+    "origin": {
+      "icao": "VICX",
+      "lat": 26.404301,
+      "lon": 80.410103
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-04T01:00:00+00:00",
+    "landing_iso": "2025-02-04T03:17:20.047902+00:00"
+  },
+  {
+    "flight_id": "IR_OIKB_068",
+    "origin": {
+      "icao": "OIKB",
+      "lat": 27.218299865722656,
+      "lon": 56.37779998779297
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-04T02:00:00+00:00",
+    "landing_iso": "2025-02-04T06:50:20.678757+00:00"
+  },
+  {
+    "flight_id": "TR_LTAW_069",
+    "origin": {
+      "icao": "LTAW",
+      "lat": 40.32472,
+      "lon": 36.39056
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-04T03:00:00+00:00",
+    "landing_iso": "2025-02-04T07:24:34.804382+00:00"
+  },
+  {
+    "flight_id": "CA_CYQX_070",
+    "origin": {
+      "icao": "CYQX",
+      "lat": 48.936258,
+      "lon": -54.567719
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-04T04:00:00+00:00",
+    "landing_iso": "2025-02-04T07:53:55.844132+00:00"
+  },
+  {
+    "flight_id": "NZ_NZKK_071",
+    "origin": {
+      "icao": "NZKK",
+      "lat": -35.259148,
+      "lon": 173.913317
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-04T05:00:00+00:00",
+    "landing_iso": "2025-02-04T15:29:10.274744+00:00"
+  },
+  {
+    "flight_id": "CA_CYYY_072",
+    "origin": {
+      "icao": "CYYY",
+      "lat": 48.60860061645508,
+      "lon": -68.20809936523438
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-04T06:00:00+00:00",
+    "landing_iso": "2025-02-04T15:53:14.311098+00:00"
+  },
+  {
+    "flight_id": "RU_USKK_073",
+    "origin": {
+      "icao": "USKK",
+      "lat": 58.503883,
+      "lon": 49.347831
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-04T07:00:00+00:00",
+    "landing_iso": "2025-02-04T11:49:55.563338+00:00"
+  },
+  {
+    "flight_id": "DZ_DAUK_074",
+    "origin": {
+      "icao": "DAUK",
+      "lat": 33.067799,
+      "lon": 6.08867
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-04T08:00:00+00:00",
+    "landing_iso": "2025-02-04T15:53:56.212756+00:00"
+  },
+  {
+    "flight_id": "US_KAPN_075",
+    "origin": {
+      "icao": "KAPN",
+      "lat": 45.0780983,
+      "lon": -83.56030273
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-04T09:00:00+00:00",
+    "landing_iso": "2025-02-04T14:33:38.473594+00:00"
+  },
+  {
+    "flight_id": "FR_LFBO_076",
+    "origin": {
+      "icao": "LFBO",
+      "lat": 43.629101,
+      "lon": 1.36382
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-04T10:00:00+00:00",
+    "landing_iso": "2025-02-04T20:13:51.341908+00:00"
+  },
+  {
+    "flight_id": "JP_RORY_077",
+    "origin": {
+      "icao": "RORY",
+      "lat": 27.043847,
+      "lon": 128.401648
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-04T11:00:00+00:00",
+    "landing_iso": "2025-02-04T17:07:46.800024+00:00"
+  },
+  {
+    "flight_id": "IN_VABO_078",
+    "origin": {
+      "icao": "VABO",
+      "lat": 22.336201,
+      "lon": 73.226303
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-04T12:00:00+00:00",
+    "landing_iso": "2025-02-04T16:23:02.117395+00:00"
+  },
+  {
+    "flight_id": "US_KSHV_079",
+    "origin": {
+      "icao": "KSHV",
+      "lat": 32.446602,
+      "lon": -93.8256
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-04T13:00:00+00:00",
+    "landing_iso": "2025-02-04T17:13:10.731249+00:00"
+  },
+  {
+    "flight_id": "US_KMHT_080",
+    "origin": {
+      "icao": "KMHT",
+      "lat": 42.932598,
+      "lon": -71.435699
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-04T14:00:00+00:00",
+    "landing_iso": "2025-02-04T21:03:08.327547+00:00"
+  },
+  {
+    "flight_id": "US_KCCR_081",
+    "origin": {
+      "icao": "KCCR",
+      "lat": 37.9897,
+      "lon": -122.056999
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-04T15:00:00+00:00",
+    "landing_iso": "2025-02-04T19:21:52.828116+00:00"
+  },
+  {
+    "flight_id": "NO_ENRO_082",
+    "origin": {
+      "icao": "ENRO",
+      "lat": 62.578399658203,
+      "lon": 11.342300415039
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-04T16:00:00+00:00",
+    "landing_iso": "2025-02-04T23:15:40.586083+00:00"
+  },
+  {
+    "flight_id": "EC_SERO_083",
+    "origin": {
+      "icao": "SERO",
+      "lat": -3.441986,
+      "lon": -79.996957
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-04T17:00:00+00:00",
+    "landing_iso": "2025-02-05T03:04:49.461429+00:00"
+  },
+  {
+    "flight_id": "VE_SVVG_084",
+    "origin": {
+      "icao": "SVVG",
+      "lat": 8.624139,
+      "lon": -71.672668
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-04T18:00:00+00:00",
+    "landing_iso": "2025-02-04T23:35:40.576367+00:00"
+  },
+  {
+    "flight_id": "ZA_FAPE_085",
+    "origin": {
+      "icao": "FAPE",
+      "lat": -33.984901,
+      "lon": 25.6173
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-04T19:00:00+00:00",
+    "landing_iso": "2025-02-04T22:58:25.992597+00:00"
+  },
+  {
+    "flight_id": "AR_SAZS_086",
+    "origin": {
+      "icao": "SAZS",
+      "lat": -41.151199,
+      "lon": -71.157501
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-04T20:00:00+00:00",
+    "landing_iso": "2025-02-05T06:58:40.218450+00:00"
+  },
+  {
+    "flight_id": "ID_WAJO_087",
+    "origin": {
+      "icao": "WAJO",
+      "lat": -4.9071,
+      "lon": 140.6277
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-04T21:00:00+00:00",
+    "landing_iso": "2025-02-05T03:35:08.651915+00:00"
+  },
+  {
+    "flight_id": "US_KFWA_088",
+    "origin": {
+      "icao": "KFWA",
+      "lat": 40.9785,
+      "lon": -85.195099
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-04T22:00:00+00:00",
+    "landing_iso": "2025-02-05T00:49:05.464954+00:00"
+  },
+  {
+    "flight_id": "IQ_ORER_089",
+    "origin": {
+      "icao": "ORER",
+      "lat": 36.23759841918945,
+      "lon": 43.96319961547851
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-04T23:00:00+00:00",
+    "landing_iso": "2025-02-05T01:25:26.570564+00:00"
+  },
+  {
+    "flight_id": "SE_ESNX_090",
+    "origin": {
+      "icao": "ESNX",
+      "lat": 65.59030151367188,
+      "lon": 19.28190040588379
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-05T00:00:00+00:00",
+    "landing_iso": "2025-02-05T02:59:12.631823+00:00"
+  },
+  {
+    "flight_id": "US_PAII_091",
+    "origin": {
+      "icao": "PAII",
+      "lat": 58.184386,
+      "lon": -157.374873
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-05T01:00:00+00:00",
+    "landing_iso": "2025-02-05T08:38:49.251751+00:00"
+  },
+  {
+    "flight_id": "US_KSEA_092",
+    "origin": {
+      "icao": "KSEA",
+      "lat": 47.447943,
+      "lon": -122.310276
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-05T02:00:00+00:00",
+    "landing_iso": "2025-02-05T11:07:43.371405+00:00"
+  },
+  {
+    "flight_id": "VE_SVJC_093",
+    "origin": {
+      "icao": "SVJC",
+      "lat": 11.780775,
+      "lon": -70.151497
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-05T03:00:00+00:00",
+    "landing_iso": "2025-02-05T08:47:57.982924+00:00"
+  },
+  {
+    "flight_id": "CA_CYZY_094",
+    "origin": {
+      "icao": "CYZY",
+      "lat": 55.297786,
+      "lon": -123.133907
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-05T04:00:00+00:00",
+    "landing_iso": "2025-02-05T06:34:18.297679+00:00"
+  },
+  {
+    "flight_id": "CN_ZJQH_095",
+    "origin": {
+      "icao": "ZJQH",
+      "lat": 19.140951,
+      "lon": 110.452766
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-05T05:00:00+00:00",
+    "landing_iso": "2025-02-05T10:26:04.464883+00:00"
+  },
+  {
+    "flight_id": "GH_DGSI_096",
+    "origin": {
+      "icao": "DGSI",
+      "lat": 6.71456,
+      "lon": -1.59082
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-05T06:00:00+00:00",
+    "landing_iso": "2025-02-05T16:57:54.332720+00:00"
+  },
+  {
+    "flight_id": "AT_LOWI_097",
+    "origin": {
+      "icao": "LOWI",
+      "lat": 47.260201,
+      "lon": 11.344
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-05T07:00:00+00:00",
+    "landing_iso": "2025-02-05T13:45:43.304781+00:00"
+  },
+  {
+    "flight_id": "VC_TVSM_098",
+    "origin": {
+      "icao": "TVSM",
+      "lat": 12.8879,
+      "lon": -61.180199
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-05T08:00:00+00:00",
+    "landing_iso": "2025-02-05T18:44:22.939435+00:00"
+  },
+  {
+    "flight_id": "ZM_FLSK_099",
+    "origin": {
+      "icao": "FLSK",
+      "lat": -12.961667,
+      "lon": 28.516667
+    },
+    "destination": {
+      "icao": "ESSA",
+      "lat": 59.6498,
+      "lon": 17.9238
+    },
+    "takeoff_iso": "2025-02-05T09:00:00+00:00",
+    "landing_iso": "2025-02-05T18:44:49.262352+00:00"
+  }
+]

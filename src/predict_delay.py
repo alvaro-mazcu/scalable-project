@@ -1,21 +1,23 @@
 #!/usr/bin/env python3
 """Simple regression model that predicts flight time deviations using weather features."""
-
-from __future__ import annotations
-
 import argparse
+import datetime as dt
 import math
+import os
 from typing import List
 
+import joblib
 import pandas as pd
+from sklearn.ensemble import HistGradientBoostingRegressor, RandomForestRegressor
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
-from sklearn.ensemble import HistGradientBoostingRegressor, RandomForestRegressor
 
 TARGET_COLUMN = "flight_time_diff_sec"
+MODEL_DIR = "models"
+LATEST_MODEL_FILE = "lastest_model.txt"
 
 
 def parse_args() -> argparse.Namespace:
@@ -28,6 +30,16 @@ def parse_args() -> argparse.Namespace:
         choices=["linear", "random_forest", "xgboost"],
         default="linear",
         help="Regression model to train (default: linear).",
+    )
+    parser.add_argument(
+        "--models-dir",
+        default=MODEL_DIR,
+        help="Directory where trained models will be stored (default: models).",
+    )
+    parser.add_argument(
+        "--latest-file",
+        default=LATEST_MODEL_FILE,
+        help="Path to the text file where the last trained model name will be written.",
     )
     return parser.parse_args()
 
@@ -83,6 +95,8 @@ def train_and_evaluate(
     test_size: float,
     random_state: int,
     model_kind: str,
+    models_dir: str,
+    latest_file: str,
 ) -> None:
     X = df[weather_cols].astype(float)
     y = df[TARGET_COLUMN].astype(float)
@@ -109,6 +123,23 @@ def train_and_evaluate(
     print(f"RMSE: {rmse:0.2f} sec")
     print(f"R^2:  {r2:0.3f}")
 
+    save_model(pipeline, model_kind, models_dir, latest_file)
+
+
+def make_model_name(model_kind: str) -> str:
+    today = dt.datetime.now().strftime("%d_%m_%Y")
+    return f"{today}_{model_kind}"
+
+
+def save_model(pipeline: Pipeline, model_kind: str, models_dir: str, latest_file: str) -> None:
+    os.makedirs(models_dir, exist_ok=True)
+    model_name = make_model_name(model_kind)
+    model_path = os.path.join(models_dir, f"{model_name}.joblib")
+    joblib.dump(pipeline, model_path)
+    with open(latest_file, "w", encoding="utf-8") as handle:
+        handle.write(model_name)
+    print(f"[MODEL] Saved to {model_path}")
+    print(f"[MODEL] Last trained model recorded in {latest_file}")
 
 
 def main() -> None:
@@ -121,6 +152,8 @@ def main() -> None:
         test_size=args.test_size,
         random_state=args.random_state,
         model_kind=args.model,
+        models_dir=args.models_dir,
+        latest_file=args.latest_file,
     )
 
 
