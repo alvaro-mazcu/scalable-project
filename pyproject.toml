@@ -18,6 +18,7 @@ dependencies = [
     "matplotlib>=3.8",
     "cartopy>=0.22",
     "streamlit>=1.31",
+    "plotly>=5.18",
 ]
 
 [project.optional-dependencies]
