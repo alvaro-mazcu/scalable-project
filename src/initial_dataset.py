@@ -28,7 +28,7 @@ OPENSKY_API_BASE = os.getenv("OPENSKY_API_BASE", "https://opensky-network.org/ap
 # - OR legacy basic auth (if your account supports it): set OPENSKY_USERNAME + OPENSKY_PASSWORD
 OPENSKY_CLIENT_ID = os.getenv("OPENSKY_CLIENT_ID", "")
 OPENSKY_CLIENT_SECRET = os.getenv("OPENSKY_CLIENT_SECRET", "")
-DEFAULT_OPENSKY_TOKEN_URL = "https://opensky-network.org/auth/realms/opensky-network/protocol/openid-connect/token"
+DEFAULT_OPENSKY_TOKEN_URL = "https://auth.opensky-network.org/auth/realms/opensky-network/protocol/openid-connect/token"
 _token_url_env = os.getenv("OPENSKY_TOKEN_URL", "").strip()
 if _token_url_env.lower().startswith(("http://", "https://")):
     OPENSKY_TOKEN_URL = _token_url_env
