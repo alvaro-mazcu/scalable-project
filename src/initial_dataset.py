@@ -463,7 +463,7 @@ def build_dataset(
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Build Sweden flights + weather dataset (CSV).")
-    parser.add_argument("--days", type=int, default=1, help="Number of past UTC days to ingest (ending yesterday).")
+    parser.add_argument("--days", type=int, default=3, help="Number of past UTC days to ingest (ending yesterday).")
     parser.add_argument("--out", type=str, default="sweden_flights.csv", help="Output CSV path.")
     parser.add_argument(
         "--airports",
