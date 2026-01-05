@@ -131,7 +131,7 @@ def get_weather(flights_df):
         weather_params = {
             "latitude": lat, "longitude": lon,
             "start_date": start_date, "end_date": end_date,
-            "hourly": "temperature_2m,precipitation,wind_speed_10m,wind_gusts_10m",
+            "hourly": "temperature_2m,precipitation,wind_speed_10m,wind_gusts_10m,pressure_msl,relative_humidity_2m,cloudcover,wind_direction_10m,weather_code",
             "timezone": "UTC"
         }
 
@@ -255,12 +255,17 @@ def train_and_eval_models(split_strategy: str = "random"):
         # (merged_df['precipitation_arr'] > 2.5)
     )
 
-    df_extreme = merged_df[extreme_mask].copy()
+    # df_extreme = merged_df[extreme_mask].copy()
 
-    print(f"Total flights: {len(merged_df)}")
-    print(f"Flights during extreme weather: {len(df_extreme)}")
+    # print(f"Total flights: {len(merged_df)}")
+    # print(f"Flights during extreme weather: {len(df_extreme)}")
 
-    merged_df = df_extreme
+    # merged_df = df_extreme
+
+    merged_df['wind_dir_sin_dep'] = np.sin(2 * np.pi * merged_df['wind_direction_10m_dep'] / 360)
+    merged_df['wind_dir_cos_dep'] = np.cos(2 * np.pi * merged_df['wind_direction_10m_dep'] / 360)
+    merged_df['wind_dir_sin_arr'] = np.sin(2 * np.pi * merged_df['wind_direction_10m_arr'] / 360)
+    merged_df['wind_dir_cos_arr'] = np.cos(2 * np.pi * merged_df['wind_direction_10m_arr'] / 360)
 
     # data preparation
     X = merged_df.drop(['dep_delay', 'arr_delay'], axis=1)
@@ -288,10 +293,12 @@ def train_and_eval_models(split_strategy: str = "random"):
 
     # select features and prepare training and testing sets
     departure_cols = [
-        'temperature_2m_dep', 'precipitation_dep', 'wind_speed_10m_dep', 'wind_gusts_10m_dep',
+        'temperature_2m_dep', 'precipitation_dep', 'wind_speed_10m_dep', 'wind_gusts_10m_dep', 'pressure_msl_dep', 
+        'relative_humidity_2m_dep', 'cloudcover_dep', 'weather_code_dep', 'wind_dir_sin_dep', 'wind_dir_cos_dep'
     ]
     arrival_cols = [
-        'temperature_2m_arr', 'precipitation_arr', 'wind_speed_10m_arr', 'wind_gusts_10m_arr',
+        'temperature_2m_arr', 'precipitation_arr', 'wind_speed_10m_arr', 'wind_gusts_10m_arr', 'pressure_msl_arr', 
+        'relative_humidity_2m_arr', 'cloudcover_arr', 'weather_code_arr', 'wind_dir_sin_arr', 'wind_dir_cos_arr'
     ]
     all_cols = departure_cols + arrival_cols
 
@@ -429,5 +436,7 @@ def plot_tournament_results():
 
 if __name__ == '__main__':
 
+    flights_df = get_flights_hopsworks()
+    get_weather(flights_df)
     train_and_eval_models(split_strategy="random")
     plot_tournament_results()
