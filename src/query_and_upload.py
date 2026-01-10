@@ -23,12 +23,12 @@ END_DATE = "2026-01-07"
 
 # origins
 AIRPORTS = {
-    "LHR": {"lat": 51.4700, "lon": -0.4543},  # London Heathrow, UK
-    "FRA": {"lat": 50.0333, "lon": 8.5705},   # Frankfurt, Germany
-    "AMS": {"lat": 52.3086, "lon": 4.7639},   # Amsterdam Schiphol, Netherlands
-    "CPH": {"lat": 55.6179, "lon": 12.6560},  # Copenhagen, Denmark
-    "CDG": {"lat": 49.0097, "lon": 2.5479},   # Paris Charles de Gaulle, France
-    "IST": {"lat": 41.2753, "lon": 28.7519},  # Istanbul, Turkey
+    # "LHR": {"lat": 51.4700, "lon": -0.4543},  # London Heathrow, UK
+    # "FRA": {"lat": 50.0333, "lon": 8.5705},   # Frankfurt, Germany
+    # "AMS": {"lat": 52.3086, "lon": 4.7639},   # Amsterdam Schiphol, Netherlands
+    # "CPH": {"lat": 55.6179, "lon": 12.6560},  # Copenhagen, Denmark
+    # "CDG": {"lat": 49.0097, "lon": 2.5479},   # Paris Charles de Gaulle, France
+    # "IST": {"lat": 41.2753, "lon": 28.7519},  # Istanbul, Turkey
     "MAD": {"lat": 40.4839, "lon": -3.5680},  # Madrid Adolfo Suárez-Barajas, Spain
     "BCN": {"lat": 41.2974, "lon": 2.0833},   # Barcelona–El Prat, Spain
     "FCO": {"lat": 41.8003, "lon": 12.2389},  # Rome Fiumicino, Italy

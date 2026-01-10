@@ -19,7 +19,7 @@ load_dotenv()
 
 API_KEY = os.getenv("EDGE_API_KEY", "")
 DESTINATION = os.getenv("DESTINATION_IATA", "CPH").upper()
-MODEL_NAME = "daily_arrival_time_enc2_xgb"
+MODEL_NAME = "daily_departure_time_enc2_xgb"
 
 # DEFAULT_AIRPORTS = {
 #     "LHR": {"lat": 51.4700, "lon": -0.4543},
@@ -58,7 +58,7 @@ AIRPORTS = load_airports()
 ROWS_TO_KEEP = [airport.lower() for airport in AIRPORTS.keys()]
 
 
-def call_edge(date_from: str, date_to: str | None = None, airport: str = DESTINATION, kind: str = "arrival"):
+def call_edge(date_from: str, date_to: str | None = None, airport: str = DESTINATION, kind: str = "departure"):
     url = "https://aviation-edge.com/v2/public/flightsHistory"
     params = {
         "key": API_KEY,
@@ -89,22 +89,22 @@ def create_dataframe_flights(flights_json: list[dict]) -> pd.DataFrame:
                 "airline": airline.get("name"),
                 "dep_airport": dep.get("iataCode"),
                 "dep_time_sched": dep.get("scheduledTime"),
-                "dep_time_actual": dep.get("actualTime"),
+                # "dep_time_actual": dep.get("actualTime"),
                 "dep_delay": dep.get("delay") or 0,
                 "arr_airport": arr.get("iataCode"),
                 "arr_time_sched": arr.get("scheduledTime"),
-                "arr_time_actual": arr.get("actualTime"),
+                # "arr_time_actual": arr.get("actualTime"),
                 "arr_delay": arr.get("delay") or 0,
             }
         )
 
     df = pd.DataFrame(data)
-    for col in ["dep_time_sched", "dep_time_actual", "arr_time_sched", "arr_time_actual"]:
+    for col in ["dep_time_sched", "arr_time_sched"]:
         df[col] = pd.to_datetime(df[col], errors="coerce")
     return df
 
 
-def fetch_flights_range(start_date: str, end_date: str, airport: str = DESTINATION, kind: str = "arrival") -> pd.DataFrame:
+def fetch_flights_range(start_date: str, end_date: str, airport: str = DESTINATION, kind: str = "departure") -> pd.DataFrame:
     start_dt = dt.datetime.strptime(start_date, "%Y-%m-%d")
     end_dt = dt.datetime.strptime(end_date, "%Y-%m-%d")
     all_records: list[dict] = []
@@ -214,7 +214,7 @@ def prepare_training_data(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.Series]:
     df = df.sort_values("dep_time_sched")
     df = df.drop_duplicates(subset=["dep_airport", "dep_time_sched", "arr_time_sched"])
 
-    drop_cols = ["dep_time_actual", "arr_time_actual", "flight_iata", "airline"]
+    drop_cols = ["flight_iata", "airline"]
     df = df.drop(columns=[c for c in drop_cols if c in df.columns], errors="ignore")
 
     df["weather_timestamp_deo"] = pd.to_datetime(df["weather_timestamp_deo"], errors="coerce", utc=True)
@@ -268,13 +268,14 @@ def prepare_training_data(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.Series]:
     X_enc["arr_hour_sin"] = np.sin(2 * np.pi * df["weather_timestamp_arr"].dt.hour / 24)
     X_enc["arr_hour_cos"] = np.cos(2 * np.pi * df["weather_timestamp_arr"].dt.hour / 24)
 
-    y = np.log1p(df["arr_delay"].fillna(0))
+    y = np.log1p(df["dep_delay"].fillna(0))
     return X_enc, y
 
 
 def train_model(X: pd.DataFrame, y: pd.Series) -> xgb.XGBRegressor:
     model = xgb.XGBRegressor(objective="reg:squarederror", n_estimators=10, random_state=42)
     model.fit(X, y)
+
     return model
 
 
@@ -289,7 +290,7 @@ def save_model(model: xgb.XGBRegressor, feature_cols: list[str], out_dir: str) -
 def register_model(mr, model_path: str):
     model = mr.python.create_model(
         name=MODEL_NAME,
-        description="Daily arrival delay model (time encoding 2).",
+        description="Daily departure delay model (time encoding 2).",
     )
     return model.save(model_path)
 
@@ -297,7 +298,7 @@ def register_model(mr, model_path: str):
 def fetch_historical_dataset(path: str, start_date: str, end_date: str, refresh: bool) -> pd.DataFrame:
     if os.path.exists(path) and not refresh:
         df = pd.read_csv(path)
-        for col in ["dep_time_sched", "arr_time_sched", "dep_time_actual", "arr_time_actual", "weather_timestamp_deo", "weather_timestamp_arr"]:
+        for col in ["dep_time_sched", "arr_time_sched", "weather_timestamp_deo", "weather_timestamp_arr"]:
             if col in df.columns:
                 df[col] = pd.to_datetime(df[col], errors="coerce", utc=True)
         return df
@@ -351,6 +352,7 @@ def main() -> None:
     )
 
     fs = project.get_feature_store()
+    flights_fg = fs.get_feature_group(name="european_flights_fg", version=2)
     mr = project.get_model_registry()
 
     # historical_df = fetch_historical_dataset(
@@ -360,7 +362,7 @@ def main() -> None:
     #     refresh=args.refresh_historical,
     # )
 
-    historical_df = fs.get_feature_group(name="european_flights_fg", version=1).read()
+    historical_df = flights_fg.read()
 
     if historical_df.empty:
         raise RuntimeError("Historical dataset is empty. Check API key, dates, and airport configuration.")
@@ -382,6 +384,28 @@ def main() -> None:
     print(f"[DONE] Model saved to {model_path}")
     registered_model = register_model(mr, model_path)
     print(f"[DONE] Registered model {registered_model.name} v{registered_model.version}")
+
+    if not yesterday_df.empty:
+        key_cols = ["flight_iata", "dep_airport", "dep_time_sched"]
+        flight_cols = [col for col in historical_df.columns if col in yesterday_df.columns]
+        yesterday_flights = yesterday_df[flight_cols].copy()
+
+        for df in (historical_df, yesterday_flights):
+            if "dep_time_sched" in df.columns:
+                df["dep_time_sched"] = pd.to_datetime(df["dep_time_sched"], errors="coerce", utc=True)
+            if "dep_airport" in df.columns:
+                df["dep_airport"] = df["dep_airport"].astype(str).str.upper()
+            if "flight_iata" in df.columns:
+                df["flight_iata"] = df["flight_iata"].astype(str).str.upper()
+
+        existing = historical_df[key_cols].dropna()
+        new_rows = yesterday_flights.merge(existing, on=key_cols, how="left", indicator=True)
+        new_rows = new_rows[new_rows["_merge"] == "left_only"].drop(columns=["_merge"])
+        if not new_rows.empty:
+            flights_fg.insert(new_rows, write_options={"wait_for_job": False})
+            print(f"[DONE] Inserted {len(new_rows)} new flight(s) into european_flights_fg")
+        else:
+            print("[INFO] No new yesterday flights to insert.")
 
     # new_hist = train_df.drop_duplicates(subset=["dep_airport", "dep_time_sched", "arr_time_sched"])
     # os.makedirs(os.path.dirname(args.historical_csv) or ".", exist_ok=True)
