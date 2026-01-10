@@ -12,6 +12,8 @@ import pandas as pd
 import requests
 import xgboost as xgb
 from dotenv import load_dotenv
+from sklearn.metrics import r2_score, mean_absolute_error, root_mean_squared_error
+from sklearn.model_selection import train_test_split
 
 import hopsworks
 
@@ -272,11 +274,19 @@ def prepare_training_data(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.Series]:
     return X_enc, y
 
 
-def train_model(X: pd.DataFrame, y: pd.Series) -> xgb.XGBRegressor:
+def train_model(X: pd.DataFrame, y: pd.Series) -> tuple[xgb.XGBRegressor, float]:
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, random_state=42)
     model = xgb.XGBRegressor(objective="reg:squarederror", n_estimators=10, random_state=42)
-    model.fit(X, y)
+    model.fit(X_train, y_train)
+    preds = model.predict(X_test)
+    r2 = r2_score(y_test, preds)
+    mae = mean_absolute_error(y_test, preds)
+    rmse = root_mean_squared_error(y_test, preds)
+    print(f"MAE: {mae:.2f} minutes")
+    print(f"RMSE: {rmse:.2f} minutes")
+    print(f"R^2: {r2:.4f}")
 
-    return model
+    return model, r2
 
 
 def save_model(model: xgb.XGBRegressor, feature_cols: list[str], out_dir: str) -> str:
@@ -379,7 +389,8 @@ def main() -> None:
     train_df = merge_flights_weather(historical_df, historical_weather)
 
     X, y = prepare_training_data(train_df)
-    model = train_model(X, y)
+    model, r2 = train_model(X, y)
+    print(f"[METRIC] R2: {r2:.4f}")
     model_path = save_model(model, list(X.columns), args.model_dir)
     print(f"[DONE] Model saved to {model_path}")
     registered_model = register_model(mr, model_path)

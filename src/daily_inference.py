@@ -7,7 +7,7 @@ import time
 import json
 import hopsworks
 import numpy as np
-from sklearn.metrics import r2_score
+from sklearn.metrics import r2_score, mean_absolute_error, root_mean_squared_error
 import joblib
 import glob
 import tempfile
@@ -96,7 +96,7 @@ def create_dataframe_flights(flights_json: dict):
     return df
 
 
-def get_departures_window(airport_code: str, window_hours: int = 12) -> pd.DataFrame:
+def get_departures_window(airport_code: str, window_hours: int = 72) -> pd.DataFrame:
     now = datetime.now(timezone.utc)
     window_end = now + timedelta(hours=window_hours)
     date_from = now.strftime("%Y-%m-%d")
@@ -340,7 +340,11 @@ def main():
     merged_df["inference_timestamp"] = datetime.now(timezone.utc)
 
     # print(merged_df[["flight_iata", "airline", "dep_airport", "dep_time_sched", "dep_delay", "predicted_arr_delay"]].head(25))
-    print("R2: ", r2_score(merged_df["dep_delay"], preds))
+    print("R2: ", r2_score(merged_df["dep_delay"], np.clip(preds, 0, None)))
+    mae = mean_absolute_error(merged_df["dep_delay"], np.clip(preds, 0, None))
+    rmse = root_mean_squared_error(merged_df["dep_delay"], np.clip(preds, 0, None))
+    print(f"MAE: {mae:.2f} minutes")
+    print(f"RMSE: {rmse:.2f} minutes")
     upload_predictions_hopsworks(merged_df, project=project)
     print("Daily inference completed and uploaded to Hopsworks.")
 

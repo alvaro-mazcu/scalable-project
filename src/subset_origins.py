@@ -27,7 +27,9 @@ AIRPORTS = {
     "LHR": {"lat": 51.4700, "lon": -0.4543},
     "FRA": {"lat": 50.0333, "lon": 8.5705},
     "AMS": {"lat": 52.3086, "lon": 4.7639},
-    "CPH": {"lat": 55.6179, "lon": 12.6560}
+    "CPH": {"lat": 55.6179, "lon": 12.6560},
+    "CDG": {"lat": 49.0097, "lon": 2.5479},   # Paris Charles de Gaulle, France
+    "IST": {"lat": 41.2753, "lon": 28.7519},  # Istanbul, Turkey
 }
 
 ROWS_TO_KEEP = [
@@ -167,7 +169,7 @@ def get_flights_hopsworks():
     )
     fs = project.get_feature_store()
 
-    flights_fg = fs.get_feature_group("flights_fg", version=1)
+    flights_fg = fs.get_feature_group("european_flights_fg", version=2)
 
     flights_df = flights_fg.read()
 
@@ -288,7 +290,7 @@ def train_regressor(model, X_train, y_train, X_test, y_test, name="", target="",
 def train_and_eval_models(split_strategy: str = "random"):
 
     flights_df = get_flights_hopsworks()
-    weather_df = pd.read_parquet('weather_data.parquet') 
+    weather_df = get_weather(flights_df)
     merged_df = merge_flights_weather(flights_df, weather_df)
 
     unique_keys = ['dep_airport', 'dep_time_sched', 'arr_time_sched']
@@ -298,7 +300,7 @@ def train_and_eval_models(split_strategy: str = "random"):
     print(merged_df[['dep_airport', 'dep_time_sched', 'arr_time_sched', 'flight_iata', 'airline']][:50])
 
     merged_df = merged_df.sort_values('dep_time_sched')
-    drop_cols = ['dep_time_actual', 'arr_time_actual', 'flight_iata', 'airline']
+    drop_cols = ['flight_iata', 'airline']
     merged_df = merged_df.drop(columns=drop_cols)
 
     # df_dep_only = merged_df[merged_df['dep_delay'] > 5].copy()
@@ -366,100 +368,100 @@ def train_and_eval_models(split_strategy: str = "random"):
     all_cols = departure_cols + arrival_cols
 
     # training models with departure weather or arrival weather features only
-    departure_X_train = X_train[departure_cols]
-    departure_X_test = X_test[departure_cols]
+    # departure_X_train = X_train[departure_cols]
+    # departure_X_test = X_test[departure_cols]
 
-    arrival_X_train = X_train[arrival_cols]
-    arrival_X_test = X_test[arrival_cols]
+    # arrival_X_train = X_train[arrival_cols]
+    # arrival_X_test = X_test[arrival_cols]
 
-    departure_rf_model = RandomForestRegressor(n_estimators=100, random_state=42)
-    departure_xgb_model = xgb.XGBRegressor(objective='reg:squarederror', n_estimators=10)
+    # departure_rf_model = RandomForestRegressor(n_estimators=100, random_state=42)
+    # departure_xgb_model = xgb.XGBRegressor(objective='reg:squarederror', n_estimators=10)
 
-    print("Training Random Forest Regressor for Departure Delays:")
-    train_regressor(departure_rf_model, departure_X_train, y_train['dep_delay'], departure_X_test, y_test['dep_delay'], name="Random Forest", target="Departure", feat_set="Departure Weather Only")
-    print("\nTraining XGBoost Regressor for Departure Delays:")
-    train_regressor(departure_xgb_model, departure_X_train, y_train['dep_delay'], departure_X_test, y_test['dep_delay'], name="XGBoost", target="Departure", feat_set="Departure Weather Only")
+    # print("Training Random Forest Regressor for Departure Delays:")
+    # train_regressor(departure_rf_model, departure_X_train, y_train['dep_delay'], departure_X_test, y_test['dep_delay'], name="Random Forest", target="Departure", feat_set="Departure Weather Only")
+    # print("\nTraining XGBoost Regressor for Departure Delays:")
+    # train_regressor(departure_xgb_model, departure_X_train, y_train['dep_delay'], departure_X_test, y_test['dep_delay'], name="XGBoost", target="Departure", feat_set="Departure Weather Only")
 
-    arrival_rf_model = RandomForestRegressor(n_estimators=100, random_state=42)
-    arrival_xgb_model = xgb.XGBRegressor(objective='reg:squarederror', n_estimators=10)
+    # arrival_rf_model = RandomForestRegressor(n_estimators=100, random_state=42)
+    # arrival_xgb_model = xgb.XGBRegressor(objective='reg:squarederror', n_estimators=10)
 
-    print("\nTraining Random Forest Regressor for Arrival Delays:")
-    train_regressor(arrival_rf_model, arrival_X_train, y_train['arr_delay'], arrival_X_test, y_test['arr_delay'], name="Random Forest", target="Arrival", feat_set="Arrival Weather Only")
-    print("\nTraining XGBoost Regressor for Arrival Delays:")
-    train_regressor(arrival_xgb_model, arrival_X_train, y_train['arr_delay'], arrival_X_test, y_test['arr_delay'], name="XGBoost", target="Arrival", feat_set="Arrival Weather Only")
+    # print("\nTraining Random Forest Regressor for Arrival Delays:")
+    # train_regressor(arrival_rf_model, arrival_X_train, y_train['arr_delay'], arrival_X_test, y_test['arr_delay'], name="Random Forest", target="Arrival", feat_set="Arrival Weather Only")
+    # print("\nTraining XGBoost Regressor for Arrival Delays:")
+    # train_regressor(arrival_xgb_model, arrival_X_train, y_train['arr_delay'], arrival_X_test, y_test['arr_delay'], name="XGBoost", target="Arrival", feat_set="Arrival Weather Only")
 
-    # training models with all weather features
-    all_X_train = X_train[all_cols]
-    all_X_test = X_test[all_cols]
+    # # training models with all weather features
+    # all_X_train = X_train[all_cols]
+    # all_X_test = X_test[all_cols]
 
-    all_dep_rf_model = RandomForestRegressor(n_estimators=100, random_state=42)
-    all_dep_xgb_model = xgb.XGBRegressor(objective='reg:squarederror', n_estimators=10)
+    # all_dep_rf_model = RandomForestRegressor(n_estimators=100, random_state=42)
+    # all_dep_xgb_model = xgb.XGBRegressor(objective='reg:squarederror', n_estimators=10)
 
-    print("\nTraining Random Forest Regressor for Departure Delays (All Features):")
-    train_regressor(all_dep_rf_model, all_X_train, y_train['dep_delay'], all_X_test, y_test['dep_delay'], name="Random Forest", target="Departure", feat_set="All Weather Features")
-    print("\nTraining XGBoost Regressor for Departure Delays (All Features):")
-    train_regressor(all_dep_xgb_model, all_X_train, y_train['dep_delay'], all_X_test, y_test['dep_delay'], name="XGBoost", target="Departure", feat_set="All Weather Features")
+    # print("\nTraining Random Forest Regressor for Departure Delays (All Features):")
+    # train_regressor(all_dep_rf_model, all_X_train, y_train['dep_delay'], all_X_test, y_test['dep_delay'], name="Random Forest", target="Departure", feat_set="All Weather Features")
+    # print("\nTraining XGBoost Regressor for Departure Delays (All Features):")
+    # train_regressor(all_dep_xgb_model, all_X_train, y_train['dep_delay'], all_X_test, y_test['dep_delay'], name="XGBoost", target="Departure", feat_set="All Weather Features")
 
-    all_arr_rf_model = RandomForestRegressor(n_estimators=100, random_state=42)
-    all_arr_xgb_model = xgb.XGBRegressor(objective='reg:squarederror', n_estimators=10)
+    # all_arr_rf_model = RandomForestRegressor(n_estimators=100, random_state=42)
+    # all_arr_xgb_model = xgb.XGBRegressor(objective='reg:squarederror', n_estimators=10)
 
-    print("\nTraining Random Forest Regressor for Arrival Delays (All Features):")
-    train_regressor(all_arr_rf_model, all_X_train, y_train['arr_delay'], all_X_test, y_test['arr_delay'], name="Random Forest", target="Arrival", feat_set="All Weather Features")
-    print("\nTraining XGBoost Regressor for Arrival Delays (All Features):")
-    train_regressor(all_arr_xgb_model, all_X_train, y_train['arr_delay'], all_X_test, y_test['arr_delay'], name="XGBoost", target="Arrival", feat_set="All Weather Features")
+    # print("\nTraining Random Forest Regressor for Arrival Delays (All Features):")
+    # train_regressor(all_arr_rf_model, all_X_train, y_train['arr_delay'], all_X_test, y_test['arr_delay'], name="Random Forest", target="Arrival", feat_set="All Weather Features")
+    # print("\nTraining XGBoost Regressor for Arrival Delays (All Features):")
+    # train_regressor(all_arr_xgb_model, all_X_train, y_train['arr_delay'], all_X_test, y_test['arr_delay'], name="XGBoost", target="Arrival", feat_set="All Weather Features")
 
     # train models with categorical encoding for airports
-    with_categorical_encoding = ['dep_airport_lhr', 'dep_airport_fra', 'dep_airport_ams'] + all_cols
+    with_categorical_encoding = ['dep_airport_lhr', 'dep_airport_fra', 'dep_airport_ams', 'dep_airport_cph', 'dep_airport_cdg', 'dep_airport_ist'] + all_cols
 
     X_train_enc = pd.get_dummies(X_train, columns=['dep_airport'])[with_categorical_encoding]
     X_test_enc = pd.get_dummies(X_test, columns=['dep_airport'])[with_categorical_encoding]
 
-    enc_dep_rf_model = RandomForestRegressor(n_estimators=100, random_state=42)
-    enc_dep_xgb_model = xgb.XGBRegressor(objective='reg:squarederror', n_estimators=10)
+    # enc_dep_rf_model = RandomForestRegressor(n_estimators=100, random_state=42)
+    # enc_dep_xgb_model = xgb.XGBRegressor(objective='reg:squarederror', n_estimators=10)
 
-    print("\nTraining Random Forest Regressor for Departure Delays (With Categorical Encoding):")
-    train_regressor(enc_dep_rf_model, X_train_enc, y_train['dep_delay'], X_test_enc, y_test['dep_delay'], name="Random Forest", target="Departure", feat_set="With Categorical Encoding")
-    print("\nTraining XGBoost Regressor for Departure Delays (With Categorical Encoding):")
-    train_regressor(enc_dep_xgb_model, X_train_enc, y_train['dep_delay'], X_test_enc, y_test['dep_delay'], name="XGBoost", target="Departure", feat_set="With Categorical Encoding")
+    # print("\nTraining Random Forest Regressor for Departure Delays (With Categorical Encoding):")
+    # train_regressor(enc_dep_rf_model, X_train_enc, y_train['dep_delay'], X_test_enc, y_test['dep_delay'], name="Random Forest", target="Departure", feat_set="With Categorical Encoding")
+    # print("\nTraining XGBoost Regressor for Departure Delays (With Categorical Encoding):")
+    # train_regressor(enc_dep_xgb_model, X_train_enc, y_train['dep_delay'], X_test_enc, y_test['dep_delay'], name="XGBoost", target="Departure", feat_set="With Categorical Encoding")
 
-    enc_arr_rf_model = RandomForestRegressor(n_estimators=100, random_state=42)
-    enc_arr_xgb_model = xgb.XGBRegressor(objective='reg:squarederror', n_estimators=10)
+    # enc_arr_rf_model = RandomForestRegressor(n_estimators=100, random_state=42)
+    # enc_arr_xgb_model = xgb.XGBRegressor(objective='reg:squarederror', n_estimators=10)
 
-    print("\nTraining Random Forest Regressor for Arrival Delays (With Categorical Encoding):")
-    train_regressor(enc_arr_rf_model, X_train_enc, y_train['arr_delay'], X_test_enc, y_test['arr_delay'], name="Random Forest", target="Arrival", feat_set="With Categorical Encoding")
-    print("\nTraining XGBoost Regressor for Arrival Delays (With Categorical Encoding):")
-    train_regressor(enc_arr_xgb_model, X_train_enc, y_train['arr_delay'], X_test_enc, y_test['arr_delay'], name="XGBoost", target="Arrival", feat_set="With Categorical Encoding")
+    # print("\nTraining Random Forest Regressor for Arrival Delays (With Categorical Encoding):")
+    # train_regressor(enc_arr_rf_model, X_train_enc, y_train['arr_delay'], X_test_enc, y_test['arr_delay'], name="Random Forest", target="Arrival", feat_set="With Categorical Encoding")
+    # print("\nTraining XGBoost Regressor for Arrival Delays (With Categorical Encoding):")
+    # train_regressor(enc_arr_xgb_model, X_train_enc, y_train['arr_delay'], X_test_enc, y_test['arr_delay'], name="XGBoost", target="Arrival", feat_set="With Categorical Encoding")
 
-    # train models with categorical encoding for time features
-    X_train['dep_operational_bin'] = X_train['weather_timestamp_dep'].dt.hour.apply(get_operational_bin)
-    X_test['dep_operational_bin'] = X_test['weather_timestamp_dep'].dt.hour.apply(get_operational_bin)
-    X_train['arr_operational_bin'] = X_train['weather_timestamp_arr'].dt.hour.apply(get_operational_bin)
-    X_test['arr_operational_bin'] = X_test['weather_timestamp_arr'].dt.hour.apply(get_operational_bin)
+    # # train models with categorical encoding for time features
+    # X_train['dep_operational_bin'] = X_train['weather_timestamp_dep'].dt.hour.apply(get_operational_bin)
+    # X_test['dep_operational_bin'] = X_test['weather_timestamp_dep'].dt.hour.apply(get_operational_bin)
+    # X_train['arr_operational_bin'] = X_train['weather_timestamp_arr'].dt.hour.apply(get_operational_bin)
+    # X_test['arr_operational_bin'] = X_test['weather_timestamp_arr'].dt.hour.apply(get_operational_bin)
 
-    with_time_encoding = (
-        ['dep_operational_bin' + f'_{time}' for time in ['morning', 'midday', 'evening', 'night']]
-        + ['arr_operational_bin' + f'_{time}' for time in ['morning', 'midday', 'evening', 'night']]
-        + all_cols
-    )
+    # with_time_encoding = (
+    #     ['dep_operational_bin' + f'_{time}' for time in ['morning', 'midday', 'evening', 'night']]
+    #     + ['arr_operational_bin' + f'_{time}' for time in ['morning', 'midday', 'evening', 'night']]
+    #     + all_cols
+    # )
 
-    X_train_time_enc = pd.get_dummies(X_train, columns=['arr_operational_bin', 'dep_operational_bin'])[with_time_encoding]
-    X_test_time_enc = pd.get_dummies(X_test, columns=['arr_operational_bin', 'dep_operational_bin'])[with_time_encoding]
+    # X_train_time_enc = pd.get_dummies(X_train, columns=['arr_operational_bin', 'dep_operational_bin'])[with_time_encoding]
+    # X_test_time_enc = pd.get_dummies(X_test, columns=['arr_operational_bin', 'dep_operational_bin'])[with_time_encoding]
 
-    time_enc_dep_rf_model = RandomForestRegressor(n_estimators=100, random_state=42)
-    time_enc_dep_xgb_model = xgb.XGBRegressor(objective='reg:squarederror', n_estimators=10)
+    # time_enc_dep_rf_model = RandomForestRegressor(n_estimators=100, random_state=42)
+    # time_enc_dep_xgb_model = xgb.XGBRegressor(objective='reg:squarederror', n_estimators=10)
 
-    print("\nTraining Random Forest Regressor for Departure Delays (With Time Encoding):")
-    train_regressor(time_enc_dep_rf_model, X_train_time_enc, y_train['dep_delay'], X_test_time_enc, y_test['dep_delay'], name="Random Forest", target="Departure", feat_set="With Time Encoding")
-    print("\nTraining XGBoost Regressor for Departure Delays (With Time Encoding):")
-    train_regressor(time_enc_dep_xgb_model, X_train_time_enc, y_train['dep_delay'], X_test_time_enc, y_test['dep_delay'], name="XGBoost", target="Departure", feat_set="With Time Encoding")
+    # print("\nTraining Random Forest Regressor for Departure Delays (With Time Encoding):")
+    # train_regressor(time_enc_dep_rf_model, X_train_time_enc, y_train['dep_delay'], X_test_time_enc, y_test['dep_delay'], name="Random Forest", target="Departure", feat_set="With Time Encoding")
+    # print("\nTraining XGBoost Regressor for Departure Delays (With Time Encoding):")
+    # train_regressor(time_enc_dep_xgb_model, X_train_time_enc, y_train['dep_delay'], X_test_time_enc, y_test['dep_delay'], name="XGBoost", target="Departure", feat_set="With Time Encoding")
 
-    time_enc_arr_rf_model = RandomForestRegressor(n_estimators=100, random_state=42)
-    time_enc_arr_xgb_model = xgb.XGBRegressor(objective='reg:squarederror', n_estimators=10)
+    # time_enc_arr_rf_model = RandomForestRegressor(n_estimators=100, random_state=42)
+    # time_enc_arr_xgb_model = xgb.XGBRegressor(objective='reg:squarederror', n_estimators=10)
 
-    print("\nTraining Random Forest Regressor for Arrival Delays (With Time Encoding):")
-    train_regressor(time_enc_arr_rf_model, X_train_time_enc, y_train['arr_delay'], X_test_time_enc, y_test['arr_delay'], name="Random Forest", target="Arrival", feat_set="With Time Encoding")
-    print("\nTraining XGBoost Regressor for Arrival Delays (With Time Encoding):")
-    train_regressor(time_enc_arr_xgb_model, X_train_time_enc, y_train['arr_delay'], X_test_time_enc, y_test['arr_delay'], name="XGBoost", target="Arrival", feat_set="With Time Encoding")
+    # print("\nTraining Random Forest Regressor for Arrival Delays (With Time Encoding):")
+    # train_regressor(time_enc_arr_rf_model, X_train_time_enc, y_train['arr_delay'], X_test_time_enc, y_test['arr_delay'], name="Random Forest", target="Arrival", feat_set="With Time Encoding")
+    # print("\nTraining XGBoost Regressor for Arrival Delays (With Time Encoding):")
+    # train_regressor(time_enc_arr_xgb_model, X_train_time_enc, y_train['arr_delay'], X_test_time_enc, y_test['arr_delay'], name="XGBoost", target="Arrival", feat_set="With Time Encoding")
 
     # time encoding using sine and cosine transformations
     X_train_enc['dep_hour_sin'] = np.sin(2 * np.pi * X_train['weather_timestamp_deo'].dt.hour / 24)
