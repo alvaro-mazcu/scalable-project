@@ -7,18 +7,20 @@ name = "scalable-project"
 version = "0.1.0"
 description = "Utilities for building a Sweden flights dataset enriched with weather data."
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = "==3.12.*"
 authors = [{name = "Alvaro Mazcunan"}]
 dependencies = [
-    "pandas>=2.2",
+    "hopsworks[python,great-expectations]==4.2.*",
     "requests>=2.31",
     "python-dotenv>=1.0",
     "scikit-learn>=1.4",
     "joblib>=1.3",
     "matplotlib>=3.8",
     "cartopy>=0.22",
-    "streamlit>=1.31",
+    "streamlit==1.28.2",
     "plotly>=5.18",
+    "xgboost>=1.7",
+    "pyarrow>=22.0.0",
 ]
 
 [project.optional-dependencies]

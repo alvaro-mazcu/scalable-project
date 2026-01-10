@@ -28,8 +28,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--model",
         choices=["linear", "random_forest", "xgboost"],
-        default="linear",
-        help="Regression model to train (default: linear).",
+        default="random_forest",
+        help="Regression model to train (default: random_forest).",
     )
     parser.add_argument(
         "--models-dir",
