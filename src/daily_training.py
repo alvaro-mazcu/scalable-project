@@ -19,6 +19,7 @@ load_dotenv()
 
 API_KEY = os.getenv("EDGE_API_KEY", "")
 DESTINATION = os.getenv("DESTINATION_IATA", "CPH").upper()
+MODEL_NAME = "daily_arrival_time_enc2_xgb"
 
 # DEFAULT_AIRPORTS = {
 #     "LHR": {"lat": 51.4700, "lon": -0.4543},
@@ -180,6 +181,7 @@ def merge_flights_weather(flights_df: pd.DataFrame, weather_df: pd.DataFrame) ->
     arrival_weather = arrival_weather.rename(columns={"airport_iata": "arr_airport"})
 
     flights_df["weather_timestamp_deo"] = pd.to_datetime(flights_df["weather_timestamp_deo"], utc=True)
+    flights_df["arr_time_hour"] = pd.to_datetime(flights_df["arr_time_hour"], utc=True)
     departure_weather["weather_timestamp"] = pd.to_datetime(departure_weather["weather_timestamp"], utc=True)
     arrival_weather["weather_timestamp"] = pd.to_datetime(arrival_weather["weather_timestamp"], utc=True)
 
@@ -279,9 +281,17 @@ def train_model(X: pd.DataFrame, y: pd.Series) -> xgb.XGBRegressor:
 def save_model(model: xgb.XGBRegressor, feature_cols: list[str], out_dir: str) -> str:
     os.makedirs(out_dir, exist_ok=True)
     stamp = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%d")
-    path = os.path.join(out_dir, f"daily_arrival_time_enc2_xgb_{stamp}.joblib")
+    path = os.path.join(out_dir, f"{MODEL_NAME}_{stamp}.joblib")
     joblib.dump({"model": model, "features": feature_cols}, path)
     return path
+
+
+def register_model(mr, model_path: str):
+    model = mr.python.create_model(
+        name=MODEL_NAME,
+        description="Daily arrival delay model (time encoding 2).",
+    )
+    return model.save(model_path)
 
 
 def fetch_historical_dataset(path: str, start_date: str, end_date: str, refresh: bool) -> pd.DataFrame:
@@ -293,7 +303,7 @@ def fetch_historical_dataset(path: str, start_date: str, end_date: str, refresh:
         return df
 
     os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
-    flights_df = fetch_flights_range(start_date, end_date, airport=DESTINATION, kind="arrival")
+    flights_df = fetch_flights_range(start_date, end_date, airport=DESTINATION, kind="departure")
     if flights_df.empty:
         return pd.DataFrame()
     weather_df = fetch_weather(flights_df)
@@ -303,10 +313,17 @@ def fetch_historical_dataset(path: str, start_date: str, end_date: str, refresh:
 
 
 def fetch_yesterday_dataset(path_2_save: str) -> pd.DataFrame:
-    yesterday = (dt.datetime.now(dt.timezone.utc).date() - dt.timedelta(days=1)).strftime("%Y-%m-%d")
-    flights_df = fetch_flights_range(yesterday, yesterday, airport=DESTINATION, kind="arrival")
-    if flights_df.empty:
+    yesterday = (dt.datetime.now(dt.timezone.utc).date() - dt.timedelta(days=4)).strftime("%Y-%m-%d")
+    frames: list[pd.DataFrame] = []
+    for airport in DEFAULT_AIRPORTS.keys():
+        df = fetch_flights_range(yesterday, yesterday, airport=airport, kind="departure")
+        if not df.empty:
+            frames.append(df)
+
+    if not frames:
         return pd.DataFrame()
+
+    flights_df = pd.concat(frames, ignore_index=True)
     weather_df = fetch_weather(flights_df)
     merged_df = merge_flights_weather(flights_df, weather_df)
     os.makedirs(os.path.dirname(path_2_save) or ".", exist_ok=True)
@@ -319,9 +336,9 @@ def main() -> None:
     parser.add_argument("--historical-csv", default="data/historical_flights_weather.csv")
     parser.add_argument("--yesterday-csv", default="data/yesterday_flights_weather.csv")
     parser.add_argument("--model-dir", default="models")
-    parser.add_argument("--historical-start", default=os.getenv("HIST_START_DATE", "2025-01-01"))
-    parser.add_argument("--historical-end", default=os.getenv("HIST_END_DATE", (dt.datetime.now(dt.timezone.utc).date() - dt.timedelta(days=1)).strftime("%Y-%m-%d")))
-    parser.add_argument("--refresh-historical", action="store_true")
+    # parser.add_argument("--historical-start", default=os.getenv("HIST_START_DATE", "2025-01-01"))
+    # parser.add_argument("--historical-end", default=os.getenv("HIST_END_DATE", (dt.datetime.now(dt.timezone.utc).date() - dt.timedelta(days=1)).strftime("%Y-%m-%d")))
+    # parser.add_argument("--refresh-historical", action="store_true")
     args = parser.parse_args()
 
     if not API_KEY:
@@ -334,6 +351,7 @@ def main() -> None:
     )
 
     fs = project.get_feature_store()
+    mr = project.get_model_registry()
 
     # historical_df = fetch_historical_dataset(
     #     path=args.historical_csv,
@@ -347,6 +365,7 @@ def main() -> None:
     if historical_df.empty:
         raise RuntimeError("Historical dataset is empty. Check API key, dates, and airport configuration.")
 
+    train_df = historical_df.copy()
     yesterday_df = fetch_yesterday_dataset(path_2_save=args.yesterday_csv)
     if yesterday_df.empty:
         print("[WARN] Yesterday dataset is empty; training with historical data only.")
@@ -361,11 +380,13 @@ def main() -> None:
     model = train_model(X, y)
     model_path = save_model(model, list(X.columns), args.model_dir)
     print(f"[DONE] Model saved to {model_path}")
+    registered_model = register_model(mr, model_path)
+    print(f"[DONE] Registered model {registered_model.name} v{registered_model.version}")
 
-    new_hist = train_df.drop_duplicates(subset=["dep_airport", "dep_time_sched", "arr_time_sched"])
-    os.makedirs(os.path.dirname(args.historical_csv) or ".", exist_ok=True)
-    new_hist.to_csv(args.historical_csv, index=False)
-    print(f"[DONE] Updated historical dataset at {args.historical_csv}")
+    # new_hist = train_df.drop_duplicates(subset=["dep_airport", "dep_time_sched", "arr_time_sched"])
+    # os.makedirs(os.path.dirname(args.historical_csv) or ".", exist_ok=True)
+    # new_hist.to_csv(args.historical_csv, index=False)
+    # print(f"[DONE] Updated historical dataset at {args.historical_csv}")
 
 
 if __name__ == "__main__":
