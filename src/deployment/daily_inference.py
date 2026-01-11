@@ -15,7 +15,6 @@ import xgboost as xgb
 
 load_dotenv()
 API_KEY = os.getenv("EDGE_API_KEY")
-DESTINATION = os.getenv("DESTINATION_IATA", "CPH").upper()
 MODEL_NAME = "daily_departure_time_enc2_xgb"
 
 DEFAULT_AIRPORTS = {
@@ -58,12 +57,17 @@ def call_edge(date_from: str, date_to: str = None, airport: str = "CPH", kind: s
         # "date_to": date_to,
     }
 
-    response = requests.get(url, params=params, timeout=60)
-    response.raise_for_status()
+    try:
+        response = requests.get(url, params=params, timeout=60)
+        response.raise_for_status()
+    except Exception as exc:
+        print(f"[WARN] Timetable API failed for {airport}: {exc}")
+        return []
+
     flights = response.json()
 
     if not flights or "error" in flights:
-        print("No data found or API error:", flights.get("error", "Unknown error"))
+        print("No data found or API error:", flights.get("error", "Unknown error") if isinstance(flights, dict) else "Unknown error")
         return []
 
     return flights
@@ -154,7 +158,7 @@ def merge_flights_weather(flights_df: pd.DataFrame, weather_df: pd.DataFrame) ->
     flights_df["arr_airport"] = flights_df["arr_airport"].str.lower()
 
     departure_weather = weather_df[weather_df["airport_iata"].isin(ROWS_TO_KEEP)].copy()
-    arrival_weather = weather_df[weather_df["airport_iata"] == DESTINATION.lower()].copy()
+    arrival_weather = weather_df[weather_df["airport_iata"].isin(ROWS_TO_KEEP)].copy()
 
     flights_df["weather_timestamp_deo"] = flights_df["dep_time_sched"].dt.floor("H")
     flights_df["arr_time_hour"] = flights_df["arr_time_sched"].dt.floor("H")
@@ -189,13 +193,29 @@ def merge_flights_weather(flights_df: pd.DataFrame, weather_df: pd.DataFrame) ->
 
 def prepare_features(df: pd.DataFrame, feature_cols: list) -> pd.DataFrame:
     df = df.copy()
-    df["wind_dir_sin_dep"] = np.sin(2 * np.pi * df["wind_direction_10m_dep"] / 360)
-    df["wind_dir_cos_dep"] = np.cos(2 * np.pi * df["wind_direction_10m_dep"] / 360)
-    df["wind_dir_sin_arr"] = np.sin(2 * np.pi * df["wind_direction_10m_arr"] / 360)
-    df["wind_dir_cos_arr"] = np.cos(2 * np.pi * df["wind_direction_10m_arr"] / 360)
+    df["dep_time_sched"] = pd.to_datetime(df.get("dep_time_sched"), errors="coerce", utc=True)
+    df["arr_time_sched"] = pd.to_datetime(df.get("arr_time_sched"), errors="coerce", utc=True)
+    df["weather_timestamp_deo"] = pd.to_datetime(df.get("weather_timestamp_deo"), errors="coerce", utc=True)
+    df["weather_timestamp_arr"] = pd.to_datetime(
+        df["weather_timestamp_arr"] if "weather_timestamp_arr" in df.columns else df["arr_time_sched"],
+        errors="coerce",
+        utc=True,
+    )
 
-    df["weather_timestamp_deo"] = pd.to_datetime(df["weather_timestamp_deo"], errors="coerce", utc=True)
-    df["weather_timestamp_arr"] = pd.to_datetime(df["weather_timestamp_arr"], errors="coerce", utc=True)
+    def _add_wind_features(prefix: str):
+        col = f"wind_direction_10m_{prefix}"
+        sin_col = f"wind_dir_sin_{prefix}"
+        cos_col = f"wind_dir_cos_{prefix}"
+        if col in df:
+            radians = np.deg2rad(df[col].fillna(0))
+            df[sin_col] = np.sin(radians)
+            df[cos_col] = np.cos(radians)
+        else:
+            df[sin_col] = 0.0
+            df[cos_col] = 0.0
+
+    _add_wind_features("dep")
+    _add_wind_features("arr")
 
     X = df.copy()
     X["dep_airport"] = X["dep_airport"].str.lower()
@@ -205,10 +225,12 @@ def prepare_features(df: pd.DataFrame, feature_cols: list) -> pd.DataFrame:
         if col not in X_enc:
             X_enc[col] = 0
 
-    X_enc["dep_hour_sin"] = np.sin(2 * np.pi * X["weather_timestamp_deo"].dt.hour / 24)
-    X_enc["dep_hour_cos"] = np.cos(2 * np.pi * X["weather_timestamp_deo"].dt.hour / 24)
-    X_enc["arr_hour_sin"] = np.sin(2 * np.pi * X["weather_timestamp_arr"].dt.hour / 24)
-    X_enc["arr_hour_cos"] = np.cos(2 * np.pi * X["weather_timestamp_arr"].dt.hour / 24)
+    dep_hours = X["weather_timestamp_deo"].dt.hour.fillna(0)
+    arr_hours = X["weather_timestamp_arr"].dt.hour.fillna(0)
+    X_enc["dep_hour_sin"] = np.sin(2 * np.pi * dep_hours / 24)
+    X_enc["dep_hour_cos"] = np.cos(2 * np.pi * dep_hours / 24)
+    X_enc["arr_hour_sin"] = np.sin(2 * np.pi * arr_hours / 24)
+    X_enc["arr_hour_cos"] = np.cos(2 * np.pi * arr_hours / 24)
 
     for col in feature_cols:
         if col not in X_enc:
@@ -252,6 +274,8 @@ def upload_predictions_hopsworks(df: pd.DataFrame, project=None):
         event_time="dep_time_sched",
     )
 
+    required_cols = ["flight_iata", "dep_airport", "dep_time_sched"]
+    df = df.dropna(subset=[col for col in required_cols if col in df.columns])
     df = coerce_df_to_fg_schema(df, fg)
     fg.insert(df, write_options={"wait_for_job": False})
 
@@ -264,6 +288,7 @@ def coerce_df_to_fg_schema(df: pd.DataFrame, fg) -> pd.DataFrame:
         df = df[[col for col in df.columns if col in schema_names]]
 
     type_map = {feature.name: (feature.type or "").lower() for feature in schema}
+    timestamp_cols = []
     for name, ftype in type_map.items():
         if name not in df.columns:
             continue
@@ -273,12 +298,12 @@ def coerce_df_to_fg_schema(df: pd.DataFrame, fg) -> pd.DataFrame:
             df[name] = pd.to_numeric(df[name], errors="coerce")
         elif "timestamp" in ftype:
             df[name] = pd.to_datetime(df[name], errors="coerce", utc=True)
+            df[name] = df[name].where(df[name].notna(), None)
+            timestamp_cols.append(name)
         elif ftype in {"string", "varchar"}:
             df[name] = df[name].astype(str)
         elif ftype == "boolean":
             df[name] = df[name].astype("boolean")
-
-        return df
 
     string_cols = {"flight_iata", "airline", "dep_airport", "arr_airport", "model_path"}
     for col in df.columns:
@@ -287,11 +312,17 @@ def coerce_df_to_fg_schema(df: pd.DataFrame, fg) -> pd.DataFrame:
             continue
         if df[col].dtype == object and ("time" in col or "timestamp" in col):
             df[col] = pd.to_datetime(df[col], errors="coerce", utc=True)
+            df[col] = df[col].where(df[col].notna(), None)
             continue
         if df[col].dtype == object:
             numeric = pd.to_numeric(df[col], errors="coerce")
             if numeric.notna().sum() == df[col].notna().sum():
                 df[col] = numeric
+        if pd.api.types.is_datetime64_any_dtype(df[col]):
+            df[col] = df[col].where(df[col].notna(), None)
+
+    if timestamp_cols:
+        df = df.dropna(subset=timestamp_cols)
 
     return df
 
@@ -311,9 +342,14 @@ def main():
     all_flights = []
     for airport in AIRPORTS.keys():
         print(f"Fetching departures for {airport}")
-        df = get_departures_window(airport)
-        if not df.empty:
-            all_flights.append(df)
+        try:
+            df = get_departures_window(airport)
+        except Exception as exc:
+            print(f"[WARN] Skipping {airport} due to fetch error: {exc}")
+            continue
+        if df.empty:
+            continue
+        all_flights.append(df)
 
     if not all_flights:
         print("No departures found for the current window.")
