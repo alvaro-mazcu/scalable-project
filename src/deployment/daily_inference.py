@@ -179,14 +179,14 @@ def merge_flights_weather(flights_df: pd.DataFrame, weather_df: pd.DataFrame) ->
         how="left",
     )
 
-    merged_df = pd.merge(
-        merged_df,
-        arrival_weather,
-        left_on=["arr_airport", "arr_time_hour"],
-        right_on=["arr_airport", "weather_timestamp"],
-        how="left",
-        suffixes=("_dep", "_arr"),
-    )
+    # merged_df = pd.merge(
+    #     merged_df,
+    #     arrival_weather,
+    #     left_on=["arr_airport", "arr_time_hour"],
+    #     right_on=["arr_airport", "weather_timestamp"],
+    #     how="left",
+    #     suffixes=("_dep", "_arr"),
+    # )
 
     return merged_df
 
