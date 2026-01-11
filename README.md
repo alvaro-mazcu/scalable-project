@@ -26,6 +26,7 @@ Weather is the primary driver of variance in this model. For every flight, we ca
 | `pressure_msl` | Sea-level pressure (hPa), used to detect storm systems. |
 | `cloudcover` | Total cloud cover percentage. |
 | `weather_code` | WMO code representing specific conditions (e.g., fog, thunderstorm). |
+| `wind_dir_cos`, `wind_dir_sin` | transformed wind direction | 
 
 #### Cyclical Time Encoding
 We transformed timestamps into circular coordinates using **Sine and Cosine** transformations. We used the times for both departure and arrival.
@@ -42,7 +43,7 @@ We transformed timestamps into circular coordinates using **Sine and Cosine** tr
 ### Feature Summary Table
 
 | Group | Final Feature Count |
-| :--- | :--- | :--- |
+| :--- | :--- |
 | **Airports** | 10 (One-Hot) |
 | **Weather** | 10 (including 2 for wind direction)|
 | **Time** | 4 (Cyclical) |
