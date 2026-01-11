@@ -40,10 +40,14 @@ We transformed timestamps into circular coordinates using **Sine and Cosine** tr
 * **Delay Clipping:** Delays are clipped at **180 minutes** during training to prevent extreme technical delays (plane breakdowns) from skewing the model's understanding of weather-related delays.
 * **Duplicate Handling:** The pipeline strictly enforces uniqueness of the flights to prevent data leakage.
 
-### Feature Summary Table
+### Feature Summary
 
 | Group | Final Feature Count |
 | :--- | :--- |
 | **Airports** | 10 (One-Hot) |
 | **Weather** | 10 (including 2 for wind direction)|
 | **Time** | 4 (Cyclical) |
+
+## Model training
+
+![Alternative Text](model_tournament_metrics.png)
