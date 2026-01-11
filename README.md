@@ -1,5 +1,7 @@
 # Flight departure delay prediction model
 
+App link: https://lescalable-frames.streamlit.app/
+
 For the final project of the course Scalable Machine Learning and Deep Learning (HT25), we (Álvaro Mazcuñán Herreros and Jonas Lorenz) implemented a daily pipeline for the prediction of flight delays based on weather data at big European airports.
 
 ## Problem description
