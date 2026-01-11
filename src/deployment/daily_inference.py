@@ -7,11 +7,9 @@ import time
 import json
 import hopsworks
 import numpy as np
-from sklearn.metrics import r2_score, mean_absolute_error, root_mean_squared_error
 import joblib
 import glob
 import tempfile
-import xgboost as xgb
 
 load_dotenv()
 API_KEY = os.getenv("EDGE_API_KEY")
@@ -158,23 +156,23 @@ def merge_flights_weather(flights_df: pd.DataFrame, weather_df: pd.DataFrame) ->
     flights_df["arr_airport"] = flights_df["arr_airport"].str.lower()
 
     departure_weather = weather_df[weather_df["airport_iata"].isin(ROWS_TO_KEEP)].copy()
-    arrival_weather = weather_df[weather_df["airport_iata"].isin(ROWS_TO_KEEP)].copy()
+    # arrival_weather = weather_df[weather_df["airport_iata"].isin(ROWS_TO_KEEP)].copy()
 
-    flights_df["weather_timestamp_deo"] = flights_df["dep_time_sched"].dt.floor("H")
+    flights_df["weather_timestamp_dep"] = flights_df["dep_time_sched"].dt.floor("H")
     flights_df["arr_time_hour"] = flights_df["arr_time_sched"].dt.floor("H")
 
     departure_weather = departure_weather.rename(columns={"airport_iata": "dep_airport"})
-    arrival_weather = arrival_weather.rename(columns={"airport_iata": "arr_airport"})
+    # arrival_weather = arrival_weather.rename(columns={"airport_iata": "arr_airport"})
 
-    flights_df["weather_timestamp_deo"] = pd.to_datetime(flights_df["weather_timestamp_deo"], utc=True)
+    flights_df["weather_timestamp_dep"] = pd.to_datetime(flights_df["weather_timestamp_dep"], utc=True)
     flights_df["arr_time_hour"] = pd.to_datetime(flights_df["arr_time_hour"], utc=True)
     departure_weather["weather_timestamp"] = pd.to_datetime(departure_weather["weather_timestamp"], utc=True)
-    arrival_weather["weather_timestamp"] = pd.to_datetime(arrival_weather["weather_timestamp"], utc=True)
+    # arrival_weather["weather_timestamp"] = pd.to_datetime(arrival_weather["weather_timestamp"], utc=True)
 
     merged_df = pd.merge(
         flights_df,
         departure_weather,
-        left_on=["dep_airport", "weather_timestamp_deo"],
+        left_on=["dep_airport", "weather_timestamp_dep"],
         right_on=["dep_airport", "weather_timestamp"],
         how="left",
     )
@@ -188,6 +186,21 @@ def merge_flights_weather(flights_df: pd.DataFrame, weather_df: pd.DataFrame) ->
     #     suffixes=("_dep", "_arr"),
     # )
 
+    weather_cols = [
+        "wind_direction_10m",
+        "temperature_2m",
+        "precipitation",
+        "wind_speed_10m",
+        "wind_gusts_10m",
+        "pressure_msl",
+        "relative_humidity_2m",
+        "cloudcover",
+        "weather_code",
+    ]
+    rename_map = {col: f"{col}_dep" for col in weather_cols if col in merged_df.columns}
+    if rename_map:
+        merged_df = merged_df.rename(columns=rename_map)
+
     merged_df = merged_df.drop_duplicates(subset=["dep_airport", "dep_time_sched", "arr_airport", "arr_time_sched"])
 
     return merged_df
@@ -197,7 +210,7 @@ def prepare_features(df: pd.DataFrame, feature_cols: list) -> pd.DataFrame:
     df = df.copy()
     df["dep_time_sched"] = pd.to_datetime(df.get("dep_time_sched"), errors="coerce", utc=True)
     df["arr_time_sched"] = pd.to_datetime(df.get("arr_time_sched"), errors="coerce", utc=True)
-    df["weather_timestamp_deo"] = pd.to_datetime(df.get("weather_timestamp_deo"), errors="coerce", utc=True)
+    df["weather_timestamp_dep"] = pd.to_datetime(df.get("weather_timestamp_dep"), errors="coerce", utc=True)
     df["weather_timestamp_arr"] = pd.to_datetime(
         df["weather_timestamp_arr"] if "weather_timestamp_arr" in df.columns else df["arr_time_sched"],
         errors="coerce",
@@ -217,7 +230,7 @@ def prepare_features(df: pd.DataFrame, feature_cols: list) -> pd.DataFrame:
             df[cos_col] = 0.0
 
     _add_wind_features("dep")
-    _add_wind_features("arr")
+    # _add_wind_features("arr")
 
     X = df.copy()
     X["dep_airport"] = X["dep_airport"].str.lower()
@@ -227,7 +240,7 @@ def prepare_features(df: pd.DataFrame, feature_cols: list) -> pd.DataFrame:
         if col not in X_enc:
             X_enc[col] = 0
 
-    dep_hours = X["weather_timestamp_deo"].dt.hour.fillna(0)
+    dep_hours = X["weather_timestamp_dep"].dt.hour.fillna(0)
     arr_hours = X["weather_timestamp_arr"].dt.hour.fillna(0)
     X_enc["dep_hour_sin"] = np.sin(2 * np.pi * dep_hours / 24)
     X_enc["dep_hour_cos"] = np.cos(2 * np.pi * dep_hours / 24)
@@ -270,7 +283,7 @@ def upload_predictions_hopsworks(df: pd.DataFrame, project=None):
 
     fg = fs.get_or_create_feature_group(
         name="daily_inference_predictions_fg",
-        version=1,
+        version=2,
         description="Daily inference: flights, weather, and delay predictions",
         primary_key=["flight_iata", "dep_airport", "dep_time_sched"],
         event_time="dep_time_sched",
@@ -372,18 +385,15 @@ def main():
     merged_df = merge_flights_weather(flights_df, weather_df)
     feature_df = prepare_features(merged_df, feature_cols)
 
+    print("COLS TO READ: ", feature_cols)
+    # print(feature_df.head(35))
+
     preds_log = model.predict(feature_df)
     preds = np.expm1(preds_log)
     merged_df["predicted_dep_delay"] = preds
     merged_df["model_path"] = model_path
     merged_df["inference_timestamp"] = datetime.now(timezone.utc)
 
-    # print(merged_df[["flight_iata", "airline", "dep_airport", "dep_time_sched", "dep_delay", "predicted_arr_delay"]].head(25))
-    print("R2: ", r2_score(merged_df["dep_delay"], np.clip(preds, 0, None)))
-    mae = mean_absolute_error(merged_df["dep_delay"], np.clip(preds, 0, None))
-    rmse = root_mean_squared_error(merged_df["dep_delay"], np.clip(preds, 0, None))
-    print(f"MAE: {mae:.2f} minutes")
-    print(f"RMSE: {rmse:.2f} minutes")
     upload_predictions_hopsworks(merged_df, project=project)
     print("Daily inference completed and uploaded to Hopsworks.")
 

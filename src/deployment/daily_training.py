@@ -195,6 +195,21 @@ def merge_flights_weather(flights_df: pd.DataFrame, weather_df: pd.DataFrame) ->
         how="left",
     )
 
+    weather_cols = [
+        "wind_direction_10m",
+        "temperature_2m",
+        "precipitation",
+        "wind_speed_10m",
+        "wind_gusts_10m",
+        "pressure_msl",
+        "relative_humidity_2m",
+        "cloudcover",
+        "weather_code",
+    ]
+    rename_map = {col: f"{col}_dep" for col in weather_cols if col in merged_df.columns}
+    if rename_map:
+        merged_df = merged_df.rename(columns=rename_map)
+
     # merged_df = pd.merge(
     #     merged_df,
     #     arrival_weather,
@@ -227,8 +242,8 @@ def prepare_training_data(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.Series]:
 
     df["wind_dir_sin_dep"] = np.sin(2 * np.pi * df["wind_direction_10m_dep"] / 360)
     df["wind_dir_cos_dep"] = np.cos(2 * np.pi * df["wind_direction_10m_dep"] / 360)
-    df["wind_dir_sin_arr"] = np.sin(2 * np.pi * df["wind_direction_10m_arr"] / 360)
-    df["wind_dir_cos_arr"] = np.cos(2 * np.pi * df["wind_direction_10m_arr"] / 360)
+    # df["wind_dir_sin_arr"] = np.sin(2 * np.pi * df["wind_direction_10m_arr"] / 360)
+    # df["wind_dir_cos_arr"] = np.cos(2 * np.pi * df["wind_direction_10m_arr"] / 360)
 
     departure_cols = [
         "temperature_2m_dep",

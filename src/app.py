@@ -134,7 +134,7 @@ def get_hopsworks_project():
 @st.cache_data(ttl=300)
 def load_predictions(_project, airport_code: str) -> pd.DataFrame:
     fs = _project.get_feature_store()
-    fg = fs.get_feature_group(name="daily_inference_predictions_fg", version=1)
+    fg = fs.get_feature_group(name="daily_inference_predictions_fg", version=2)
     if fg is None:
         return pd.DataFrame()
     df = fg.read()
