@@ -212,7 +212,7 @@ def build_map(df: pd.DataFrame, airport_code: str, coords: Dict[str, float]) -> 
         "arr_airport",
         "dep_time_sched",
         "dep_delay",
-        "predicted_arr_delay",
+        "predicted_dep_delay",
         "temperature_2m_dep",
         "wind_speed_10m_dep",
         "precipitation_dep",
@@ -229,7 +229,7 @@ def build_map(df: pd.DataFrame, airport_code: str, coords: Dict[str, float]) -> 
         + "<br>Route: " + df["dep_airport"].astype(str) + " → " + df["arr_airport"].astype(str)
         + "<br>Scheduled: " + df["dep_time_sched"].astype(str)
         + "<br>Actual delay: " + df["dep_delay"].astype(str) + " min"
-        + "<br>Predicted delay: " + df["predicted_arr_delay"].astype(str) + " min"
+        + "<br>Predicted delay: " + df["predicted_dep_delay"].astype(str) + " min"
         + "<br>Temp: " + df["temperature_2m_dep"].astype(str) + " °C"
         + "<br>Wind: " + df["wind_speed_10m_dep"].astype(str) + " m/s"
         + "<br>Precip: " + df["precipitation_dep"].astype(str) + " mm"
@@ -348,13 +348,13 @@ def main() -> None:
         "arr_airport",
         "dep_time_sched",
         "dep_delay",
-        "predicted_arr_delay",
+        "predicted_dep_delay",
     ]
     for col in display_cols:
         if col not in predictions.columns:
             predictions[col] = None
 
-    styled = predictions[display_cols].style.applymap(color_predicted, subset=["predicted_arr_delay"])
+    styled = predictions[display_cols].style.applymap(color_predicted, subset=["predicted_dep_delay"])
     st.dataframe(styled, use_container_width=True, height=420)
 
 

@@ -213,8 +213,11 @@ def prepare_training_data(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.Series]:
     TODO: Improve docstring!
     """
     df = df.copy()
+    for col in ["dep_time_sched", "arr_time_sched", "weather_timestamp_deo", "weather_timestamp_arr"]:
+        if col in df.columns:
+            df[col] = pd.to_datetime(df[col], errors="coerce", utc=True)
     df = df.sort_values("dep_time_sched")
-    df = df.drop_duplicates(subset=["dep_airport", "dep_time_sched", "arr_time_sched"])
+    df = df.drop_duplicates(subset=["dep_airport", "dep_time_sched", "arr_airport", "arr_time_sched"])
 
     drop_cols = ["flight_iata", "airline"]
     df = df.drop(columns=[c for c in drop_cols if c in df.columns], errors="ignore")
@@ -256,6 +259,8 @@ def prepare_training_data(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.Series]:
     df["dep_airport"] = df["dep_airport"].str.lower()
 
     dep_airport_cols = [f"dep_airport_{code.lower()}" for code in AIRPORTS.keys() if code.lower() != DESTINATION.lower()]
+
+    df["dep_delay"] = np.clip(df["dep_delay"], 0, 180)
 
     X = df.drop(["dep_delay", "arr_delay"], axis=1)
     X_enc = pd.get_dummies(X, columns=["dep_airport"])
@@ -323,7 +328,7 @@ def fetch_historical_dataset(path: str, start_date: str, end_date: str, refresh:
     return merged_df
 
 
-def fetch_yesterday_dataset(path_2_save: str) -> pd.DataFrame:
+def fetch_yesterday_dataset(path_2_save: str) -> tuple[pd.DataFrame, pd.DataFrame]:
     yesterday = (dt.datetime.now(dt.timezone.utc).date() - dt.timedelta(days=4)).strftime("%Y-%m-%d")
     frames: list[pd.DataFrame] = []
     for airport in DEFAULT_AIRPORTS.keys():
@@ -332,14 +337,14 @@ def fetch_yesterday_dataset(path_2_save: str) -> pd.DataFrame:
             frames.append(df)
 
     if not frames:
-        return pd.DataFrame()
+        return pd.DataFrame(), pd.DataFrame()
 
     flights_df = pd.concat(frames, ignore_index=True)
     weather_df = fetch_weather(flights_df)
     merged_df = merge_flights_weather(flights_df, weather_df)
     os.makedirs(os.path.dirname(path_2_save) or ".", exist_ok=True)
     merged_df.to_csv(path_2_save, index=False)
-    return merged_df
+    return merged_df, weather_df
 
 
 def main() -> None:
@@ -377,16 +382,16 @@ def main() -> None:
     if historical_df.empty:
         raise RuntimeError("Historical dataset is empty. Check API key, dates, and airport configuration.")
 
-    train_df = historical_df.copy()
-    yesterday_df = fetch_yesterday_dataset(path_2_save=args.yesterday_csv)
+    weather_fg = fs.get_feature_group(name="european_flights_weather_fg", version=1)
+    historical_weather = weather_fg.read()
+    historical_train = merge_flights_weather(historical_df, historical_weather)
+
+    yesterday_df, yesterday_weather = fetch_yesterday_dataset(path_2_save=args.yesterday_csv)
     if yesterday_df.empty:
         print("[WARN] Yesterday dataset is empty; training with historical data only.")
-        train_df = historical_df.copy()
+        train_df = historical_train.copy()
     else:
-        train_df = pd.concat([historical_df, yesterday_df], ignore_index=True)
-
-    historical_weather = fs.get_feature_group(name="european_flights_weather_fg", version=1).read()
-    train_df = merge_flights_weather(historical_df, historical_weather)
+        train_df = pd.concat([historical_train, yesterday_df], ignore_index=True)
 
     X, y = prepare_training_data(train_df)
     model, r2 = train_model(X, y)
@@ -417,6 +422,28 @@ def main() -> None:
             print(f"[DONE] Inserted {len(new_rows)} new flight(s) into european_flights_fg")
         else:
             print("[INFO] No new yesterday flights to insert.")
+
+        weather_key_cols = ["airport_iata", "weather_timestamp"]
+        if not yesterday_weather.empty:
+            weather_df = yesterday_weather.dropna(subset=weather_key_cols).drop_duplicates(subset=weather_key_cols).copy()
+            weather_df["airport_iata"] = weather_df["airport_iata"].astype(str).str.lower()
+
+            if "weather_timestamp" in historical_weather.columns:
+                if pd.api.types.is_datetime64_any_dtype(historical_weather["weather_timestamp"]):
+                    if historical_weather["weather_timestamp"].dt.tz is None:
+                        weather_df["weather_timestamp"] = pd.to_datetime(weather_df["weather_timestamp"], errors="coerce")
+                    else:
+                        weather_df["weather_timestamp"] = pd.to_datetime(weather_df["weather_timestamp"], errors="coerce", utc=True)
+
+            existing_weather = historical_weather[weather_key_cols].dropna()
+            new_weather = weather_df.merge(existing_weather, on=weather_key_cols, how="left", indicator=True)
+            new_weather = new_weather[new_weather["_merge"] == "left_only"].drop(columns=["_merge"])
+
+            if not new_weather.empty:
+                weather_fg.insert(new_weather, write_options={"wait_for_job": False})
+                print(f"[DONE] Inserted {len(new_weather)} new weather row(s) into european_flights_weather_fg")
+            else:
+                print("[INFO] No new yesterday weather to insert.")
 
     # new_hist = train_df.drop_duplicates(subset=["dep_airport", "dep_time_sched", "arr_time_sched"])
     # os.makedirs(os.path.dirname(args.historical_csv) or ".", exist_ok=True)

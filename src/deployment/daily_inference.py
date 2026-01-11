@@ -188,6 +188,8 @@ def merge_flights_weather(flights_df: pd.DataFrame, weather_df: pd.DataFrame) ->
         suffixes=("_dep", "_arr"),
     )
 
+    merged_df = merged_df.drop_duplicates(subset=["dep_airport", "dep_time_sched", "arr_airport", "arr_time_sched"])
+
     return merged_df
 
 
@@ -288,7 +290,7 @@ def coerce_df_to_fg_schema(df: pd.DataFrame, fg) -> pd.DataFrame:
         df = df[[col for col in df.columns if col in schema_names]]
 
     type_map = {feature.name: (feature.type or "").lower() for feature in schema}
-    timestamp_cols = []
+    timestamp_cols: list[str] = []
     for name, ftype in type_map.items():
         if name not in df.columns:
             continue
@@ -296,14 +298,18 @@ def coerce_df_to_fg_schema(df: pd.DataFrame, fg) -> pd.DataFrame:
             df[name] = pd.to_numeric(df[name], errors="coerce").astype("Int64")
         elif ftype in {"double", "float", "decimal"}:
             df[name] = pd.to_numeric(df[name], errors="coerce")
-        elif "timestamp" in ftype:
+        elif "timestamp" in ftype or ftype in {"date", "time"}:
             df[name] = pd.to_datetime(df[name], errors="coerce", utc=True)
-            df[name] = df[name].where(df[name].notna(), None)
             timestamp_cols.append(name)
         elif ftype in {"string", "varchar"}:
             df[name] = df[name].astype(str)
         elif ftype == "boolean":
             df[name] = df[name].astype("boolean")
+
+    if timestamp_cols:
+        df = df.dropna(subset=timestamp_cols)
+        for col in timestamp_cols:
+            df[col] = df[col].apply(lambda value: value.to_pydatetime() if pd.notna(value) else None)
 
     string_cols = {"flight_iata", "airline", "dep_airport", "arr_airport", "model_path"}
     for col in df.columns:
@@ -311,19 +317,17 @@ def coerce_df_to_fg_schema(df: pd.DataFrame, fg) -> pd.DataFrame:
             df[col] = df[col].astype(str)
             continue
         if df[col].dtype == object and ("time" in col or "timestamp" in col):
-            df[col] = pd.to_datetime(df[col], errors="coerce", utc=True)
-            df[col] = df[col].where(df[col].notna(), None)
+            series = pd.to_datetime(df[col], errors="coerce", utc=True)
+            df[col] = series.apply(lambda value: value.to_pydatetime() if pd.notna(value) else None)
             continue
         if df[col].dtype == object:
             numeric = pd.to_numeric(df[col], errors="coerce")
             if numeric.notna().sum() == df[col].notna().sum():
                 df[col] = numeric
         if pd.api.types.is_datetime64_any_dtype(df[col]):
-            df[col] = df[col].where(df[col].notna(), None)
+            df[col] = df[col].apply(lambda value: value.to_pydatetime() if pd.notna(value) else None)
 
-    if timestamp_cols:
-        df = df.dropna(subset=timestamp_cols)
-
+    df = df.replace({pd.NaT: None})
     return df
 
 
@@ -370,7 +374,7 @@ def main():
 
     preds_log = model.predict(feature_df)
     preds = np.expm1(preds_log)
-    merged_df["predicted_arr_delay"] = np.clip(preds, 0, None)
+    merged_df["predicted_dep_delay"] = preds
     merged_df["model_path"] = model_path
     merged_df["inference_timestamp"] = datetime.now(timezone.utc)
 
