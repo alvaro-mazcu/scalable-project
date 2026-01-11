@@ -1,51 +1,45 @@
 #!/usr/bin/env python3
-"""Streamlit dashboard for monitoring inbound flights to Stockholm Arlanda."""
+"""Streamlit dashboard for monitoring departure delays."""
 
 from __future__ import annotations
 
 import datetime as dt
+import hashlib
 import json
 import math
 import os
-import sys
-from pathlib import Path
+import textwrap
 from typing import Dict, List, Tuple
 
+import hopsworks
 import pandas as pd
 import plotly.graph_objects as go
 import requests
 import streamlit as st
+from dotenv import load_dotenv
 
-ROOT = Path(__file__).resolve().parent.parent
-if str(ROOT) not in sys.path:
-    sys.path.append(str(ROOT))
+load_dotenv(".env")
 
-from src.clients.openmeteo import OpenMeteoClient
-from src.predict_live_delay import (
-    FlightScenario,
-    build_feature_row,
-    categorize_delay,
-    ensure_feature_columns,
-    load_model,
-    load_scenarios,
-)
-from src.utils.weather import hourly_payload_to_df, interpolate_weather_at
-
-DEST_ICAO = "ESSA"
-DEST_COORDS = (59.6498, 17.9238)
-FORECAST_OFFSETS_MIN = [0, 30, 60, 120, 180]
-COLOR_MAP = {
-    "no delay expected": "#2e8b57",
-    "5-15 minutes": "#ff8c00",
-    "over 15 minutes": "#cc2936",
+DEFAULT_AIRPORTS: Dict[str, Dict[str, float]] = {
+    "LHR": {"lat": 51.4700, "lon": -0.4543},
+    "FRA": {"lat": 50.0333, "lon": 8.5705},
+    "AMS": {"lat": 52.3086, "lon": 4.7639},
+    "CPH": {"lat": 55.6179, "lon": 12.6560},
+    "CDG": {"lat": 49.0097, "lon": 2.5479},
+    "IST": {"lat": 41.2753, "lon": 28.7519},
+    "MAD": {"lat": 40.4839, "lon": -3.5680},
+    "BCN": {"lat": 41.2974, "lon": 2.0833},
+    "FCO": {"lat": 41.8003, "lon": 12.2389},
+    "MUC": {"lat": 48.3537, "lon": 11.7750},
 }
+
 WEATHER_CODE_DESC = {
     0: "Clear sky",
     1: "Mainly clear",
     2: "Partly cloudy",
     3: "Overcast",
     45: "Fog",
-    48: "Depositing rime fog",
+    48: "Rime fog",
     51: "Light drizzle",
     53: "Moderate drizzle",
     55: "Dense drizzle",
@@ -67,123 +61,100 @@ WEATHER_CODE_DESC = {
     99: "Severe thunderstorm",
 }
 
-
-def weather_code_emoji(code: int) -> str:
-    table = {
-        0: "☀️",
-        1: "🌤️",
-        2: "⛅",
-        3: "☁️",
-        45: "🌫️",
-        48: "🌫️",
-        51: "🌦️",
-        53: "🌧️",
-        55: "🌧️",
-        56: "🌧️",
-        57: "🌧️",
-        61: "🌧️",
-        63: "🌧️",
-        65: "🌧️",
-        66: "🌨️",
-        67: "🌨️",
-        71: "❄️",
-        73: "❄️",
-        75: "❄️",
-        80: "🌧️",
-        81: "🌧️",
-        82: "🌧️",
-        95: "⛈️",
-        96: "⛈️",
-        99: "⛈️",
-    }
-    return table.get(code, "🌍")
+WEATHER_CODE_EMOJI = {
+    0: "☀️",
+    1: "🌤️",
+    2: "⛅",
+    3: "☁️",
+    45: "🌫️",
+    48: "🌫️",
+    51: "🌦️",
+    53: "🌧️",
+    55: "🌧️",
+    56: "🌧️",
+    57: "🌧️",
+    61: "🌧️",
+    63: "🌧️",
+    65: "🌧️",
+    66: "🌨️",
+    67: "🌨️",
+    71: "❄️",
+    73: "❄️",
+    75: "❄️",
+    80: "🌧️",
+    81: "🌧️",
+    82: "🌧️",
+    95: "⛈️",
+    96: "⛈️",
+    99: "⛈️",
+}
 
 
-def wind_direction(deg: float | None) -> str:
-    if deg is None or math.isnan(deg):
-        return "?"
-    dirs = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"]
-    ix = int((deg + 22.5) % 360 // 45)
-    arrows = ["⬆️", "↗️", "➡️", "↘️", "⬇️", "↙️", "⬅️", "↖️"]
-    return f"{dirs[ix]} {arrows[ix]}"
+def load_airports() -> Dict[str, Dict[str, float]]:
+    raw = os.getenv("AIRPORTS_JSON", "").strip()
+    if not raw:
+        return DEFAULT_AIRPORTS
+    try:
+        payload = json.loads(raw)
+        return {k.upper(): {"lat": v["lat"], "lon": v["lon"]} for k, v in payload.items()}
+    except Exception as exc:
+        st.warning(f"Failed to parse AIRPORTS_JSON: {exc}. Using defaults.")
+        return DEFAULT_AIRPORTS
 
 
-def heading_arrow(lat_start: float, lon_start: float, lat_end: float, lon_end: float) -> str:
-    dx = lon_end - lon_start
-    dy = lat_end - lat_start
-    angle = (math.degrees(math.atan2(dy, dx)) + 360) % 360
-    directions = ["→", "↗️", "↑", "↖️", "←", "↙️", "↓", "↘️"]
-    idx = int((angle + 22.5) // 45) % 8
-    return directions[idx]
+AIRPORTS = load_airports()
 
 
 def set_page_config() -> None:
-    st.set_page_config(
-        page_title="Arlanda Inbound Flights",
-        layout="wide",
-        page_icon="✈️",
-    )
+    st.set_page_config(page_title="Departure Delay Monitor", layout="wide", page_icon="✈️")
     st.markdown(
         """
         <style>
         @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
         * { font-family: "Share Tech Mono", "DIN Alternate", "Segoe UI", system-ui, sans-serif; }
-        .css-18e3th9, .css-1d391kg { background-color: #f8fbff; }
-        .timeline-row { display: flex; gap: 1rem; overflow-x: auto; padding: 0.5rem 0; }
-        .timeline-item { min-width: 110px; display: flex; flex-direction: column; align-items: center; color: #0d1b2a; }
-        .timeline-dot { width: 6px; height: 6px; background: #0d1b2a; border-radius: 50%; margin-bottom: 0.25rem; }
-        .timeline-emoji { font-size: 1.5rem; }
-        .timeline-time { font-size: 0.9rem; font-weight: bold; }
-        .timeline-meta { font-size: 0.8rem; opacity: 0.8; text-align: center; }
-        .warning-card { border-left: 5px solid #cc2936; padding: 0.75rem 0.9rem; background: #1c1f26; border-radius: 8px; color: #f5f7fa; box-shadow: 0 4px 16px rgba(0,0,0,0.25); }
+        .weather-grid { display: flex; gap: 0.75rem; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 0.25rem; }
+        .weather-card { background: #0f172a; color: #e2e8f0; padding: 0.75rem 0.9rem; border-radius: 10px; min-width: 180px; box-shadow: 0 6px 16px rgba(15, 23, 42, 0.25); }
+        .weather-card h4 { margin: 0 0 0.35rem 0; font-size: 0.95rem; }
+        .weather-card p { margin: 0.1rem 0; font-size: 0.85rem; }
         </style>
         """,
         unsafe_allow_html=True,
     )
 
 
-@st.cache_data
-def load_scenarios_cached(path: str | None) -> List[FlightScenario]:
-    return load_scenarios(path)
-
-
 @st.cache_resource
-def load_pipeline(model_dir: str, latest_file: str):
-    return load_model(model_dir, latest_file)
-
-
-@st.cache_data
-def gather_arlanda_weather(_client: OpenMeteoClient) -> Dict[int, Dict[str, float]]:
-    now = dt.datetime.now(dt.timezone.utc)
-    timestamps = [int((now + dt.timedelta(minutes=offset)).timestamp()) for offset in FORECAST_OFFSETS_MIN]
-    unique_dates = set()
-    for ts in timestamps:
-        date = dt.datetime.fromtimestamp(ts, tz=dt.timezone.utc).date()
-        unique_dates.add(date)
-        unique_dates.add(date - dt.timedelta(days=1))
-    frames: List[pd.DataFrame] = []
-    for date in sorted(unique_dates):
-        iso = date.isoformat()
-        payload = _client.ensure_weather_for_day(DEST_ICAO, DEST_COORDS[0], DEST_COORDS[1], iso)
-        frames.append(hourly_payload_to_df(payload))
-    hourly = (
-        pd.concat(frames, ignore_index=True)
-        .drop_duplicates(subset=["time"])
-        .sort_values("time")
-        .reset_index(drop=True)
+def get_hopsworks_project():
+    return hopsworks.login(
+        engine="python",
+        project=os.getenv("HOPSWORKS_PROJECT"),
+        api_key_value=os.getenv("HOPSWORKS_API_KEY"),
     )
-    result: Dict[int, Dict[str, float]] = {}
-    for ts in timestamps:
-        result[ts] = interpolate_weather_at(hourly, ts)
-    return result
 
 
-@st.cache_data
-def fetch_hourly_forecast(lat: float, lon: float, hourly_vars: str, hours: int = 15) -> List[Dict[str, float]]:
+@st.cache_data(ttl=300)
+def load_predictions(_project, airport_code: str) -> pd.DataFrame:
+    fs = _project.get_feature_store()
+    fg = fs.get_feature_group(name="daily_inference_predictions_fg", version=1)
+    if fg is None:
+        return pd.DataFrame()
+    df = fg.read()
+    if df.empty:
+        return df
+    df["dep_airport"] = df["dep_airport"].astype(str).str.upper()
+    df = df[df["dep_airport"] == airport_code].copy()
+    df["dep_time_sched"] = pd.to_datetime(df["dep_time_sched"], errors="coerce", utc=True)
+    df["arr_time_sched"] = pd.to_datetime(df["arr_time_sched"], errors="coerce", utc=True)
+    df = df.sort_values("dep_time_sched", ascending=False)
+
+    return df
+
+
+@st.cache_data(ttl=600)
+def fetch_weather(lat: float, lon: float, hours: int = 24) -> pd.DataFrame:
     params = {
         "latitude": lat,
         "longitude": lon,
-        "hourly": hourly_vars,
+        "hourly": "temperature_2m,precipitation,wind_speed_10m,wind_direction_10m,weather_code",
         "timezone": "UTC",
         "forecast_days": 2,
     }
@@ -191,362 +162,200 @@ def fetch_hourly_forecast(lat: float, lon: float, hourly_vars: str, hours: int =
     resp.raise_for_status()
     payload = resp.json()
     hourly = payload.get("hourly", {})
-    times = hourly.get("time", [])
-    out: List[Dict[str, float]] = []
+    df = pd.DataFrame(hourly)
+    df.rename(columns={"time": "timestamp"}, inplace=True)
+    df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce", utc=True)
     now = dt.datetime.now(dt.timezone.utc)
-    for i, t in enumerate(times):
-        stamp = dt.datetime.fromisoformat(t.replace("Z", "+00:00"))
-        if stamp.tzinfo is None:
-            stamp = stamp.replace(tzinfo=dt.timezone.utc)
-        else:
-            stamp = stamp.astimezone(dt.timezone.utc)
-        if stamp < now:
-            continue
-        record = {"time": stamp}
-        for var, series in hourly.items():
-            if var == "time":
-                continue
-            if i < len(series):
-                record[var] = series[i]
-        out.append(record)
-        if len(out) >= hours:
-            break
-    return out
+    df = df[df["timestamp"] >= now].head(hours)
+    return df
 
 
-def format_weather(ts: int, wx: Dict[str, float]) -> str:
-    stamp = dt.datetime.fromtimestamp(ts, tz=dt.timezone.utc).strftime("%H:%M UTC")
-    temp = wx.get("temperature_2m")
-    precip = wx.get("precipitation")
-    wind = wx.get("wind_speed_10m")
-    code = int(wx.get("weather_code", -1)) if wx.get("weather_code") is not None else None
-    desc = WEATHER_CODE_DESC.get(code, "Unknown") if code is not None else "Unknown"
-    parts = [f"{stamp}: {desc}"]
-    if temp is not None:
-        parts.append(f"Temp {temp:.1f}°C")
-    if wind is not None:
-        parts.append(f"Wind {wind:.1f} m/s")
-    if precip is not None:
-        parts.append(f"Precip {precip:.1f} mm")
-    return " | ".join(parts)
+def jitter_location(code: str, base_lat: float, base_lon: float) -> Tuple[float, float]:
+    digest = hashlib.md5(code.encode("utf-8")).hexdigest()
+    seed = int(digest[:8], 16)
+    angle = math.radians(seed % 360)
+    radius_m = 250 + (seed % 750)
+    delta_lat = radius_m / 111_320
+    delta_lon = radius_m / (111_320 * max(math.cos(math.radians(base_lat)), 0.3))
+    return base_lat + delta_lat * math.sin(angle), base_lon + delta_lon * math.cos(angle)
 
 
-def summarize_weather(feature_map: Dict[str, float]) -> str:
-    temp = feature_map.get("wx_dest_t0_temperature_2m")
-    wind = feature_map.get("wx_dest_t0_wind_speed_10m")
-    code = feature_map.get("wx_dest_t0_weather_code")
-    desc = WEATHER_CODE_DESC.get(int(code), "Unknown") if code is not None else "Unknown"
-    parts = [desc]
-    if temp is not None:
-        parts.append(f"{temp:.1f}°C")
-    if wind is not None:
-        parts.append(f"{wind:.1f} m/s")
-    return ", ".join(parts)
+def wind_direction(deg: float | None) -> str:
+    if deg is None or pd.isna(deg):
+        return "?"
+    dirs = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"]
+    ix = int((deg + 22.5) % 360 // 45)
+    arrows = ["⬆️", "↗️", "➡️", "↘️", "⬇️", "↙️", "⬅️", "↖️"]
+    return f"{dirs[ix]} {arrows[ix]}"
 
 
-def build_predictions(
-    scenarios: List[FlightScenario],
-    client: OpenMeteoClient,
-    pipeline,
-) -> List[Tuple[FlightScenario, float, str, str]]:
-    rows: List[Dict[str, float]] = []
-    for scenario in scenarios:
-        features = build_feature_row(client, scenario)
-        rows.append(features)
+def build_map(df: pd.DataFrame, airport_code: str, coords: Dict[str, float]) -> go.Figure:
+    base_lat = coords["lat"]
+    base_lon = coords["lon"]
 
-    df_features = pd.DataFrame(rows)
-    outputs: List[Tuple[FlightScenario, float, str, str]] = []
-    for scenario, feature_map in zip(scenarios, df_features.to_dict(orient="records")):
-        vector = ensure_feature_columns(pipeline, feature_map)
-        df_vec = pd.DataFrame([vector])
-        pred = float(pipeline.predict(df_vec)[0])
-        bucket = categorize_delay(pred)
-        landing_weather = summarize_weather(feature_map)
-        outputs.append((scenario, pred, bucket, landing_weather))
-    return outputs
+    points = []
+    for _, row in df.iterrows():
+        code = str(row.get("flight_iata", "")) or f"{row.get('dep_time_sched', '')}"
+        lat, lon = jitter_location(code, base_lat, base_lon)
+        points.append((lat, lon))
 
+    if points:
+        df = df.copy()
+        df["map_lat"] = [p[0] for p in points]
+        df["map_lon"] = [p[1] for p in points]
+        df = df.dropna(subset=["map_lat", "map_lon"])
 
-def make_map(predictions: List[Tuple[FlightScenario, float, str, str]]):
+    hover_cols = [
+        "flight_iata",
+        "airline",
+        "dep_airport",
+        "arr_airport",
+        "dep_time_sched",
+        "dep_delay",
+        "predicted_arr_delay",
+        "temperature_2m_dep",
+        "wind_speed_10m_dep",
+        "precipitation_dep",
+        "weather_code_dep",
+    ]
+    for col in hover_cols:
+        if col not in df.columns:
+            df[col] = None
+
+    df = df.fillna("n/a")
+    df["hover_text"] = (
+        "Flight: " + df["flight_iata"].astype(str)
+        + "<br>Airline: " + df["airline"].astype(str)
+        + "<br>Route: " + df["dep_airport"].astype(str) + " → " + df["arr_airport"].astype(str)
+        + "<br>Scheduled: " + df["dep_time_sched"].astype(str)
+        + "<br>Actual delay: " + df["dep_delay"].astype(str) + " min"
+        + "<br>Predicted delay: " + df["predicted_arr_delay"].astype(str) + " min"
+        + "<br>Temp: " + df["temperature_2m_dep"].astype(str) + " °C"
+        + "<br>Wind: " + df["wind_speed_10m_dep"].astype(str) + " m/s"
+        + "<br>Precip: " + df["precipitation_dep"].astype(str) + " mm"
+        + "<br>Weather code: " + df["weather_code_dep"].astype(str)
+    )
+
     fig = go.Figure()
-    mapbox_token = os.getenv("MAPBOX_TOKEN", "")
-    map_style = "satellite-streets" if mapbox_token else "open-street-map"
-
-    origins_lat: List[float] = []
-    origins_lon: List[float] = []
-    origins_text: List[str] = []
-    plane_lat: List[float] = []
-    plane_lon: List[float] = []
-    plane_text: List[str] = []
-    plane_hover: List[str] = []
-
-    now_ts = dt.datetime.now(dt.timezone.utc).timestamp()
-
-    for scenario, pred, bucket, landing_weather in predictions:
-        color = COLOR_MAP.get(bucket, "gray")
-        eta = dt.datetime.fromtimestamp(scenario.landing_ts, tz=dt.timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-        hover = (
-            f"Flight: {scenario.flight_id}<br>"
-            f"Route: {scenario.origin_icao} → {scenario.dest_icao}<br>"
-            f"ETA: {eta}<br>"
-            f"Predicted delay: {pred/60:.1f} min ({bucket})<br>"
-            f"Landing wx: {landing_weather}"
-        )
-        fig.add_trace(
-            go.Scattermapbox(
-                lon=[scenario.origin_lon, DEST_COORDS[1]],
-                lat=[scenario.origin_lat, DEST_COORDS[0]],
-                mode="lines",
-                line=dict(width=3, color=color),
-                hoverinfo="skip",
-                name=bucket,
-                opacity=0.4,
-            )
-        )
-        origins_lat.append(scenario.origin_lat)
-        origins_lon.append(scenario.origin_lon)
-        origins_text.append(f"{scenario.origin_icao}")
-
-        # plane marker placement
-        if now_ts <= scenario.takeoff_ts:
-            prog = 0.0
-            plane_emoji = "🛫"
-        elif now_ts >= scenario.landing_ts:
-            prog = 1.0
-            plane_emoji = "✈️"
-        else:
-            prog = (now_ts - scenario.takeoff_ts) / max(1, scenario.landing_ts - scenario.takeoff_ts)
-            plane_emoji = "✈️"
-
-        plane_latitude = scenario.origin_lat + prog * (DEST_COORDS[0] - scenario.origin_lat)
-        plane_longitude = scenario.origin_lon + prog * (DEST_COORDS[1] - scenario.origin_lon)
-        arrow = heading_arrow(plane_latitude, plane_longitude, DEST_COORDS[0], DEST_COORDS[1])
-        plane_lat.append(plane_latitude)
-        plane_lon.append(plane_longitude)
-        plane_text.append(f"{plane_emoji}{arrow}")
-        plane_hover.append(hover)
-
-    # Destination marker
     fig.add_trace(
         go.Scattermapbox(
-            lon=[DEST_COORDS[1]],
-            lat=[DEST_COORDS[0]],
+            lat=[base_lat],
+            lon=[base_lon],
             mode="markers",
-            marker=dict(size=28, color="#0d6efd", symbol="circle"),
-            hoverinfo="text",
-            text=["ESSA (Arlanda)"],
-            name="ESSA",
+            marker={"size": 16, "color": "#2563eb"},
+            name=f"{airport_code} airport",
         )
     )
 
-    if origins_lat:
+    if not df.empty:
         fig.add_trace(
             go.Scattermapbox(
-                lon=origins_lon,
-                lat=origins_lat,
+                lat=df["map_lat"],
+                lon=df["map_lon"],
                 mode="markers",
-                marker=dict(size=6, color="#050505"),
-                hoverinfo="text",
-                text=origins_text,
-                name="Origins",
-            )
-        )
-
-    if plane_lat:
-        fig.add_trace(
-            go.Scattermapbox(
-                lon=plane_lon,
-                lat=plane_lat,
-                mode="markers",
-                marker=dict(size=16, color="#f8d54c", symbol="circle"),
-                hoverinfo="skip",
-                name="Aircraft marker",
-                showlegend=False,
-            )
-        )
-        fig.add_trace(
-            go.Scattermapbox(
-                lon=plane_lon,
-                lat=plane_lat,
-                mode="text",
-                text=plane_text,
-                textfont=dict(size=26, color="#1a1a1a"),
-                textposition="middle center",
-                hoverinfo="text",
-                hovertext=plane_hover,
-                name="Aircraft",
+                marker={"size": 14, "color": "#f97316", "opacity": 0.95},
+                text=df["hover_text"],
+                hovertemplate="%{text}<extra></extra>",
+                name="Departures",
             )
         )
 
     fig.update_layout(
-        mapbox=dict(
-            style=map_style,
-            accesstoken=mapbox_token or None,
-            center=dict(lat=55, lon=15),
-            zoom=2.7,
-        ),
-        margin=dict(l=0, r=0, t=0, b=0),
+        mapbox_style="open-street-map",
+        mapbox_center={"lat": base_lat, "lon": base_lon},
+        mapbox_zoom=13.4,
+        margin={"l": 0, "r": 0, "t": 0, "b": 0},
         height=520,
-        paper_bgcolor="#0b0f16",
-        plot_bgcolor="#0b0f16",
         showlegend=False,
     )
     return fig
 
 
+def color_predicted(val: float) -> str:
+    if pd.isna(val):
+        return ""
+    if val < 5:
+        color = "#1b7f5c"
+    elif val < 15:
+        color = "#d97706"
+    else:
+        color = "#b91c1c"
+    return f"background-color: {color}; color: #f8fafc;"
+
+
 def main() -> None:
     set_page_config()
-    st.title("Stockholm Arlanda | Inbound Delay Outlook")
-    st.caption("Live weather + model predictions for arriving flights. Powered by Open-Meteo, OpenSky, and your trained model.")
 
-    st.sidebar.header("Settings")
-    scenarios_file = st.sidebar.text_input("Scenarios JSON", "data/arlanda_scenarios.json")
-    model_dir = st.sidebar.text_input("Models directory", "models")
-    latest_file = st.sidebar.text_input("Latest model file", "lastest_model.txt")
-    cache_dir = st.sidebar.text_input("Weather cache dir", "cache")
-    openmeteo_url = st.sidebar.text_input("Open-Meteo URL", "https://archive-api.open-meteo.com/v1/archive")
-    hourly_vars = st.sidebar.text_input(
-        "Hourly weather vars",
-        "temperature_2m,relative_humidity_2m,precipitation,cloud_cover,visibility,pressure_msl,wind_speed_10m,wind_direction_10m,wind_gusts_10m,weather_code",
-    )
+    st.title("Departure Delay Monitor")
+    airport_codes = list(AIRPORTS.keys())
+    selected_airport = st.selectbox("Select departure airport", airport_codes, index=0)
+    coords = AIRPORTS[selected_airport]
 
-    try:
-        scenarios = load_scenarios_cached(scenarios_file)
-        scenarios = [s for s in scenarios if s.dest_icao.upper() == DEST_ICAO]
-        if not scenarios:
-            st.error("No scenarios targeting ESSA were provided.")
-            return
-    except Exception as exc:
-        st.error(f"Could not load scenarios: {exc}")
-        return
-
-    try:
-        pipeline, model_name = load_pipeline(model_dir, latest_file)
-    except Exception as exc:
-        st.error(f"Could not load model: {exc}")
-        return
-
-    st.sidebar.success(f"Model loaded: {model_name}")
-
-    client = OpenMeteoClient(
-        base_url=openmeteo_url,
-        hourly_vars=hourly_vars,
-        cache_dir=cache_dir,
-    )
-
-    with st.spinner("Scoring flights..."):
-        predictions = build_predictions(scenarios, client, pipeline)
-    if not predictions:
-        st.error("No predictions available. Check scenarios or model.")
-        return
-
-    avg_delay = sum(pred for _, pred, _, _ in predictions) / len(predictions)
-
-    with st.spinner("Fetching Arlanda weather..."):
-        weather_map = gather_arlanda_weather(client)
-    weather_lines = [format_weather(ts, wx) for ts, wx in sorted(weather_map.items()) if wx]
-
-    # Top forecast section
-    st.subheader("Arlanda hourly weather (next 15h)")
-    forecast = fetch_hourly_forecast(DEST_COORDS[0], DEST_COORDS[1], hourly_vars, hours=15)
-    cards_html = []
-    for entry in forecast[:15]:
-        code = int(entry.get("weather_code", -1)) if entry.get("weather_code") is not None else -1
-        emoji = weather_code_emoji(code)
-        time_str = entry["time"].strftime("%H:%M UTC")
-        temp = float(entry.get("temperature_2m") or 0.0)
-        wind = float(entry.get("wind_speed_10m") or 0.0)
-        wind_dir = wind_direction(entry.get("wind_direction_10m")) if "wind_direction_10m" in entry else "?"
-        precip = float(entry.get("precipitation") or 0.0)
-        cards_html.append(
-            f"""
-            <div class="timeline-item">
-              <div class="timeline-emoji">{emoji}</div>
-              <div class="timeline-time">{time_str}</div>
-              <div class="timeline-meta">
-                <strong>Temp</strong> {temp:.1f}°C<br/>
-                <strong>Wind</strong> {wind:.1f} m/s ({wind_dir})<br/>
-                <strong>Precip</strong> {precip:.1f} mm
-              </div>
-            </div>
-            """
-        )
-    forecast_html = f"""
-    <style>
-    .timeline-wrapper {{
-        display: flex;
-        flex-direction: row;
-        gap: 1rem;
-        overflow-x: auto;
-        padding-bottom: 0.5rem;
-    }}
-    .timeline-wrapper::-webkit-scrollbar {{
-        height: 6px;
-    }}
-    .timeline-wrapper::-webkit-scrollbar-thumb {{
-        background: #0d1b2a;
-        border-radius: 4px;
-    }}
-    .timeline-item {{
-        min-width: 150px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        color: #0d1b2a;
-        background: #ffffff;
-        border-radius: 12px;
-        padding: 0.65rem 0.75rem;
-        box-shadow: 0 6px 16px rgba(0,0,0,0.12);
-        font-family: "Segoe UI", system-ui, sans-serif;
-    }}
-    .timeline-emoji {{
-        font-size: 1.8rem;
-        margin: 0.2rem 0;
-    }}
-    .timeline-time {{
-        font-size: 1rem;
-        font-weight: bold;
-    }}
-    .timeline-meta {{
-        font-size: 0.85rem;
-        text-align: center;
-    }}
-    </style>
-    <div class="timeline-wrapper">{''.join(cards_html)}</div>
-    """
-    st.components.v1.html(forecast_html, height=240, scrolling=False)
-
-    # Warning section
-    st.subheader("Attention: highest predicted delays")
-    worst = sorted(predictions, key=lambda x: x[1], reverse=True)[:4]
-    cols = st.columns(len(worst) or 1)
-    for col, (scenario, pred, bucket, landing_weather) in zip(cols, worst):
-        with col:
-            st.markdown(
-                f"""
-                <div class="warning-card">
-                  <strong>{scenario.flight_id}</strong><br/>{scenario.origin_icao} → {scenario.dest_icao}<br/>
-                  Status: Forecasted arrival<br/>
-                  Predicted delay: <strong>{pred/60:.1f} min</strong> ({bucket})<br/>
-                  Expected landing: {dt.datetime.fromtimestamp(scenario.landing_ts, tz=dt.timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}<br/>
-                  Landing wx: {landing_weather}
-                </div>
-                """,
-                unsafe_allow_html=True,
+    st.subheader("Weather report")
+    weather_df = fetch_weather(coords["lat"], coords["lon"], hours=24)
+    if weather_df.empty:
+        st.info("Weather data is not available.")
+    else:
+        cards = []
+        for _, row in weather_df.iterrows():
+            stamp = row["timestamp"].strftime("%H:%M UTC")
+            code = int(row.get("weather_code")) if pd.notna(row.get("weather_code")) else None
+            desc = WEATHER_CODE_DESC.get(code, "Unknown")
+            emoji = WEATHER_CODE_EMOJI.get(code, "🌍")
+            wind = wind_direction(row.get("wind_direction_10m"))
+            cards.append(
+                textwrap.dedent(
+                    f"""
+                    <div class="weather-card">
+                      <h4>{stamp}</h4>
+                      <p>{emoji} {desc}</p>
+                      <p>Temp: {row.get('temperature_2m', 'n/a')} °C</p>
+                      <p>Wind: {row.get('wind_speed_10m', 'n/a')} m/s {wind}</p>
+                      <p>Precip: {row.get('precipitation', 'n/a')} mm</p>
+                    </div>
+                    """
+                ).strip()
             )
+        st.markdown('<div class="weather-grid">' + "".join(cards) + "</div>", unsafe_allow_html=True)
 
-    st.subheader("Inbound map (hover for details)")
-    map_predictions = [
-        p
-        for p in predictions
-        if -25 <= p[0].origin_lon <= 45 and 30 <= p[0].origin_lat <= 75
-    ][:12]
-    if not map_predictions:
-        st.warning("No flights within the Europe viewport; showing all instead.")
-        map_predictions = predictions[:12]
-    if not os.getenv("MAPBOX_TOKEN"):
-        st.info("Set the MAPBOX_TOKEN environment variable to unlock the satellite basemap. Falling back to OpenStreetMap tiles.")
-    fig = make_map(map_predictions)
+    st.subheader("Departure activity map")
+    project = get_hopsworks_project()
+    predictions = load_predictions(project, selected_airport)
+
+    now = dt.datetime.now(dt.timezone.utc)
+    if not predictions.empty:
+        window_end = now + dt.timedelta(hours=24)
+        window_df = predictions[
+            (predictions["dep_time_sched"] >= now) & (predictions["dep_time_sched"] <= window_end)
+        ].copy()
+        if window_df.empty:
+            window_df = predictions.head(200).copy()
+    else:
+        window_df = predictions
+
+    fig = build_map(window_df, selected_airport, coords)
     st.plotly_chart(fig, use_container_width=True)
+
+    st.subheader("Departure predictions")
+    if predictions.empty:
+        st.info("No predictions available in daily_inference_predictions_fg.")
+        return
+
+    display_cols = [
+        "flight_iata",
+        "airline",
+        "dep_airport",
+        "arr_airport",
+        "dep_time_sched",
+        "dep_delay",
+        "predicted_arr_delay",
+    ]
+    for col in display_cols:
+        if col not in predictions.columns:
+            predictions[col] = None
+
+    styled = predictions[display_cols].style.applymap(color_predicted, subset=["predicted_arr_delay"])
+    st.dataframe(styled, use_container_width=True, height=420)
 
 
 if __name__ == "__main__":

@@ -251,7 +251,7 @@ def prepare_training_data(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.Series]:
         "wind_dir_sin_arr",
         "wind_dir_cos_arr",
     ]
-    all_cols = departure_cols + arrival_cols
+    all_cols = departure_cols # + arrival_cols
 
     df["dep_airport"] = df["dep_airport"].str.lower()
 

@@ -110,7 +110,6 @@ def get_departures_window(airport_code: str, window_hours: int = 72) -> pd.DataF
     df = df[(df["dep_time_sched"] >= now) & (df["dep_time_sched"] <= window_end)].copy()
     df["dep_airport"] = df["dep_airport"].str.upper()
     df["arr_airport"] = df["arr_airport"].str.upper()
-    df = df[df["arr_airport"] == DESTINATION]
     return df
 
 
