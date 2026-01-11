@@ -8,7 +8,7 @@ app = modal.App("daily-pipeline")
 
 image = (
     modal.Image.debian_slim(python_version="3.12.11")
-    .pip_install_from_requirements(requirements_txt="pyproject.toml")
+    .pip_install_from_pyproject(pyproject_toml="pyproject.toml")
     .add_local_dir("src/deployment", remote_path="/root/general")
 )
 

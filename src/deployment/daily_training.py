@@ -195,14 +195,14 @@ def merge_flights_weather(flights_df: pd.DataFrame, weather_df: pd.DataFrame) ->
         how="left",
     )
 
-    merged_df = pd.merge(
-        merged_df,
-        arrival_weather,
-        left_on=["arr_airport", "arr_time_hour"],
-        right_on=["arr_airport", "weather_timestamp"],
-        how="left",
-        suffixes=("_dep", "_arr"),
-    )
+    # merged_df = pd.merge(
+    #     merged_df,
+    #     arrival_weather,
+    #     left_on=["arr_airport", "arr_time_hour"],
+    #     right_on=["arr_airport", "weather_timestamp"],
+    #     how="left",
+    #     suffixes=("_dep", "_arr"),
+    # )
 
     return merged_df
 
@@ -223,7 +223,7 @@ def prepare_training_data(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.Series]:
     df = df.drop(columns=[c for c in drop_cols if c in df.columns], errors="ignore")
 
     df["weather_timestamp_deo"] = pd.to_datetime(df["weather_timestamp_deo"], errors="coerce", utc=True)
-    df["weather_timestamp_arr"] = pd.to_datetime(df["weather_timestamp_arr"], errors="coerce", utc=True)
+    df["arr_time_sched"] = pd.to_datetime(df["arr_time_sched"], errors="coerce", utc=True)
 
     df["wind_dir_sin_dep"] = np.sin(2 * np.pi * df["wind_direction_10m_dep"] / 360)
     df["wind_dir_cos_dep"] = np.cos(2 * np.pi * df["wind_direction_10m_dep"] / 360)
@@ -272,8 +272,8 @@ def prepare_training_data(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.Series]:
 
     X_enc["dep_hour_sin"] = np.sin(2 * np.pi * df["weather_timestamp_deo"].dt.hour / 24)
     X_enc["dep_hour_cos"] = np.cos(2 * np.pi * df["weather_timestamp_deo"].dt.hour / 24)
-    X_enc["arr_hour_sin"] = np.sin(2 * np.pi * df["weather_timestamp_arr"].dt.hour / 24)
-    X_enc["arr_hour_cos"] = np.cos(2 * np.pi * df["weather_timestamp_arr"].dt.hour / 24)
+    X_enc["arr_hour_sin"] = np.sin(2 * np.pi * df["arr_time_sched"].dt.hour / 24)
+    X_enc["arr_hour_cos"] = np.cos(2 * np.pi * df["arr_time_sched"].dt.hour / 24)
 
     y = np.log1p(df["dep_delay"].fillna(0))
     return X_enc, y
@@ -313,7 +313,7 @@ def register_model(mr, model_path: str):
 def fetch_historical_dataset(path: str, start_date: str, end_date: str, refresh: bool) -> pd.DataFrame:
     if os.path.exists(path) and not refresh:
         df = pd.read_csv(path)
-        for col in ["dep_time_sched", "arr_time_sched", "weather_timestamp_deo", "weather_timestamp_arr"]:
+        for col in ["dep_time_sched", "arr_time_sched", "weather_timestamp_deo"]:
             if col in df.columns:
                 df[col] = pd.to_datetime(df[col], errors="coerce", utc=True)
         return df
