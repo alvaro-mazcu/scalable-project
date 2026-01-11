@@ -180,14 +180,6 @@ def jitter_location(code: str, base_lat: float, base_lon: float) -> Tuple[float,
     return base_lat + delta_lat * math.sin(angle), base_lon + delta_lon * math.cos(angle)
 
 
-def global_location(code: str) -> Tuple[float, float]:
-    digest = hashlib.md5(code.encode("utf-8")).hexdigest()
-    seed = int(digest[:12], 16)
-    lat = (seed % 18000) / 100.0 - 90.0
-    lon = ((seed // 18000) % 36000) / 100.0 - 180.0
-    return lat, lon
-
-
 def wind_direction(deg: float | None) -> str:
     if deg is None or pd.isna(deg):
         return "?"
@@ -197,60 +189,63 @@ def wind_direction(deg: float | None) -> str:
     return f"{dirs[ix]} {arrows[ix]}"
 
 
-def build_map(df: pd.DataFrame, airport_code: str, coords: Dict[str, float]) -> go.Figure:
+def build_map(df: pd.DataFrame, airport_code: str, coords: Dict[str, float], show_flights: bool) -> go.Figure:
     base_lat = coords["lat"]
     base_lon = coords["lon"]
 
-    points = []
-    for ix, row in df.iterrows():
-        code = str(row.get("flight_iata", "")) or f"{row.get('dep_time_sched', '')}" or str(ix)
-        lat, lon = global_location(code)
-        points.append((lat, lon))
+    plot_df = pd.DataFrame()
+    if show_flights and not df.empty:
+        points = []
+        for ix, row in df.iterrows():
+            code = str(row.get("flight_iata", "")) or f"{row.get('dep_time_sched', '')}" or str(ix)
+            lat, lon = jitter_location(code, base_lat, base_lon)
+            points.append((lat, lon))
 
-    st.write(f"Map points requested: {len(points)}")
+        st.write(f"Map points requested: {len(points)}")
 
-    if points:
-        df = df.copy()
-        df["map_lat"] = pd.to_numeric([p[0] for p in points], errors="coerce")
-        df["map_lon"] = pd.to_numeric([p[1] for p in points], errors="coerce")
-        df = df.dropna(subset=["map_lat", "map_lon"])
-        st.write(f"Map points after dropna: {len(df)}")
-        if not df.empty:
-            st.write(
-                f"Map lat range: {df['map_lat'].min():.2f} to {df['map_lat'].max():.2f}, "
-                f"lon range: {df['map_lon'].min():.2f} to {df['map_lon'].max():.2f}"
-            )
+        if points:
+            plot_df = df.copy()
+            plot_df["map_lat"] = pd.to_numeric([p[0] for p in points], errors="coerce")
+            plot_df["map_lon"] = pd.to_numeric([p[1] for p in points], errors="coerce")
+            plot_df = plot_df.dropna(subset=["map_lat", "map_lon"])
+            st.write(f"Map points after dropna: {len(plot_df)}")
+            if not plot_df.empty:
+                st.write(
+                    f"Map lat range: {plot_df['map_lat'].min():.2f} to {plot_df['map_lat'].max():.2f}, "
+                    f"lon range: {plot_df['map_lon'].min():.2f} to {plot_df['map_lon'].max():.2f}"
+                )
 
-    hover_cols = [
-        "flight_iata",
-        "airline",
-        "dep_airport",
-        "arr_airport",
-        "dep_time_sched",
-        "dep_delay",
-        "predicted_dep_delay",
-        "temperature_2m_dep",
-        "wind_speed_10m_dep",
-        "precipitation_dep",
-        "weather_code_dep",
-    ]
-    for col in hover_cols:
-        if col not in df.columns:
-            df[col] = None
+    if not plot_df.empty:
+        hover_cols = [
+            "flight_iata",
+            "airline",
+            "dep_airport",
+            "arr_airport",
+            "dep_time_sched",
+            "dep_delay",
+            "predicted_dep_delay",
+            "temperature_2m_dep",
+            "wind_speed_10m_dep",
+            "precipitation_dep",
+            "weather_code_dep",
+        ]
+        for col in hover_cols:
+            if col not in plot_df.columns:
+                plot_df[col] = None
 
-    df = df.fillna("n/a")
-    df["hover_text"] = (
-        "Flight: " + df["flight_iata"].astype(str)
-        + "<br>Airline: " + df["airline"].astype(str)
-        + "<br>Route: " + df["dep_airport"].astype(str) + " → " + df["arr_airport"].astype(str)
-        + "<br>Scheduled: " + df["dep_time_sched"].astype(str)
-        + "<br>Actual delay: " + df["dep_delay"].astype(str) + " min"
-        + "<br>Predicted delay: " + df["predicted_dep_delay"].astype(str) + " min"
-        + "<br>Temp: " + df["temperature_2m_dep"].astype(str) + " °C"
-        + "<br>Wind: " + df["wind_speed_10m_dep"].astype(str) + " m/s"
-        + "<br>Precip: " + df["precipitation_dep"].astype(str) + " mm"
-        + "<br>Weather code: " + df["weather_code_dep"].astype(str)
-    )
+        plot_df = plot_df.fillna("n/a")
+        plot_df["hover_text"] = (
+            "Flight: " + plot_df["flight_iata"].astype(str)
+            + "<br>Airline: " + plot_df["airline"].astype(str)
+            + "<br>Route: " + plot_df["dep_airport"].astype(str) + " → " + plot_df["arr_airport"].astype(str)
+            + "<br>Scheduled: " + plot_df["dep_time_sched"].astype(str)
+            + "<br>Actual delay: " + plot_df["dep_delay"].astype(str) + " min"
+            + "<br>Predicted delay: " + plot_df["predicted_dep_delay"].astype(str) + " min"
+            + "<br>Temp: " + plot_df["temperature_2m_dep"].astype(str) + " °C"
+            + "<br>Wind: " + plot_df["wind_speed_10m_dep"].astype(str) + " m/s"
+            + "<br>Precip: " + plot_df["precipitation_dep"].astype(str) + " mm"
+            + "<br>Weather code: " + plot_df["weather_code_dep"].astype(str)
+        )
 
     fig = go.Figure()
     fig.add_trace(
@@ -263,14 +258,14 @@ def build_map(df: pd.DataFrame, airport_code: str, coords: Dict[str, float]) -> 
         )
     )
 
-    if not df.empty:
+    if not plot_df.empty:
         fig.add_trace(
             go.Scattermapbox(
-                lat=df["map_lat"].astype(float).tolist(),
-                lon=df["map_lon"].astype(float).tolist(),
+                lat=plot_df["map_lat"].astype(float).tolist(),
+                lon=plot_df["map_lon"].astype(float).tolist(),
                 mode="markers",
                 marker={"size": 14, "color": "#f97316", "opacity": 0.95},
-                text=df["hover_text"],
+                text=plot_df["hover_text"],
                 hovertemplate="%{text}<extra></extra>",
                 name="Departures",
             )
@@ -279,8 +274,8 @@ def build_map(df: pd.DataFrame, airport_code: str, coords: Dict[str, float]) -> 
     fig.update_layout(
         mapbox={
             "style": "open-street-map",
-            "center": {"lat": 0, "lon": 0},
-            "zoom": 1.4,
+            "center": {"lat": base_lat, "lon": base_lon},
+            "zoom": 13.5,
         },
         margin={"l": 0, "r": 0, "t": 0, "b": 0},
         height=520,
@@ -368,7 +363,8 @@ def main() -> None:
     display_df = display_df.sort_values("dep_time_sched", ascending=True).reset_index(drop=True)
     styled = display_df[display_cols].style.map(color_predicted, subset=["predicted_dep_delay"])
 
-    fig = build_map(display_df, selected_airport, coords)
+    show_flights = st.checkbox("show flights in map", value=False)
+    fig = build_map(display_df, selected_airport, coords, show_flights)
     st.plotly_chart(fig, use_container_width=True)
 
     st.subheader("Departure predictions")
